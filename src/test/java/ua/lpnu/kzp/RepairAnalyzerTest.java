@@ -64,12 +64,14 @@ class RepairAnalyzerTest {
     }
 
     @Test
-    void negativeAndZeroAreRejected() {
+    void negativeZeroNanAndInfinityAreRejected() {
         RepairSummary s = RepairAnalyzer.analyze(List.of(
                 "Олійник Віктор;Ноутбук;Заміна клавіатури;1.0;-500.00",
-                "Олійник Віктор;Ноутбук;Заміна клавіатури;0;500.00"));
+                "Олійник Віктор;Ноутбук;Заміна клавіатури;0;500.00",
+                "Олійник Віктор;Ноутбук;Заміна клавіатури;NaN;500.00",
+                "Олійник Віктор;Ноутбук;Заміна клавіатури;1.0;Infinity"));
         assertEquals(0, s.validCount());
-        assertEquals(2, s.errors().size());
+        assertEquals(4, s.errors().size());
         assertEquals(0.0, s.totalRevenue(), EPS);
     }
 
