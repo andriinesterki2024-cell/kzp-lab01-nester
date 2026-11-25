@@ -126,7 +126,7 @@ public final class Main {
      */
     static String usage() {
         return String.format(
-                "Використання: java -jar lab01-1.0.0.jar [--help] [--version] "
+                "Використання: java -jar lab01-2.0.0.jar [--help] [--version] "
                         + "[--input <файл>] [--output <файл>]%n"
                         + "  --help           показати цю довідку%n"
                         + "  --version        показати версію програми та номер збірки%n"
