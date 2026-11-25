@@ -104,9 +104,12 @@ public final class Main {
         }
 
         // Читання → перевірка й обчислення → форматування: кожен крок в окремому класі.
-        RepairSummary summary = RepairAnalyzer.analyze(lines);
+        ParsedRepairs parsed = RepairAnalyzer.parse(lines);
+        RepairSummary summary = RepairAnalyzer.summarize(parsed.repairs(), parsed.errors());
         String report = ReportFormatter.format(summary);
         out.print(report);
+        // Поліморфні показники друкуються лише в консоль: файл звіту не змінюється.
+        out.print(PolymorphicReport.format(parsed.repairs()));
 
         try {
             FileReport.writeReport(output, report);
@@ -126,7 +129,7 @@ public final class Main {
      */
     static String usage() {
         return String.format(
-                "Використання: java -jar lab01-2.0.0.jar [--help] [--version] "
+                "Використання: java -jar lab01-3.0.0.jar [--help] [--version] "
                         + "[--input <файл>] [--output <файл>]%n"
                         + "  --help           показати цю довідку%n"
                         + "  --version        показати версію програми та номер збірки%n"

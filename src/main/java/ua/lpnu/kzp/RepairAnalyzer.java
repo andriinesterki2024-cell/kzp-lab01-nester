@@ -23,6 +23,17 @@ public final class RepairAnalyzer {
      * @return підсумкові показники та перелік помилок
      */
     public static RepairSummary analyze(List<String> lines) {
+        ParsedRepairs parsed = parse(lines);
+        return summarize(parsed.repairs(), parsed.errors());
+    }
+
+    /**
+     * Перетворює рядки на записи; хибні рядки потрапляють до списку помилок із номером.
+     *
+     * @param lines рядки вхідного файла
+     * @return коректні записи різних підтипів і повідомлення про пропущені рядки
+     */
+    public static ParsedRepairs parse(List<String> lines) {
         List<Repair> repairs = new ArrayList<>();
         List<String> errors = new ArrayList<>();
         for (int index = 0; index < lines.size(); index++) {
@@ -34,7 +45,7 @@ public final class RepairAnalyzer {
                 errors.add(String.format("Рядок %d: %s", index + 1, e.getMessage()));
             }
         }
-        return summarize(repairs, errors);
+        return new ParsedRepairs(repairs, errors);
     }
 
     /**

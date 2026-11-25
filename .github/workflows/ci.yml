@@ -48,13 +48,13 @@ jobs:
       - name: Run JAR
         shell: bash
         run: |
-          java -jar target/lab01-2.0.0.jar --version
-          java -jar target/lab01-2.0.0.jar --input data/input.csv --output out/report.txt
+          java -jar target/lab01-3.0.0.jar --version
+          java -jar target/lab01-3.0.0.jar --input data/input.csv --output out/report.txt
 
       - name: Upload JAR
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: lab01-2.0.0-${{ matrix.os }}-build${{ github.run_number }}
-          path: target/lab01-2.0.0.jar
+          name: lab01-3.0.0-${{ matrix.os }}-build${{ github.run_number }}
+          path: target/lab01-3.0.0.jar
           if-no-files-found: error
