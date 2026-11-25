@@ -1,4 +1,4 @@
-# Ремонтна майстерня — лабораторні роботи № 1–3 (КЗП, варіант 16)
+# Ремонтна майстерня — лабораторні роботи № 1–4 (КЗП, варіант 16)
 
 Автор: Нестер А.В., група КІ-303.
 
@@ -123,4 +123,23 @@ RepairDescriber                   вичерпний switch зі зіставл�
 
 ```text
 java -jar target/lab01-3.0.0.jar --input data/input-lab03.csv --output out/report-lab03.txt
+```
+
+## Запити Stream API (версія 4.0.0, лабораторна робота № 4)
+
+| № | Метод `RepairQueries` | Операції | Результат |
+|---|------------------------|----------|-----------|
+| 1 | `expensive(repairs, minPrice)` | filter → toList | `List<Repair>` |
+| 2 | `clientNames(repairs)` | map → distinct → sorted(український Collator) → toList | `List<String>` |
+| 3 | `countByDeviceKind(repairs)` | groupingBy(kind, EnumMap, counting) | `Map<DeviceKind, Long>` |
+| 4 | `hoursStatistics(repairs)` | summarizingDouble(hours) | `DoubleSummaryStatistics` |
+| 5 | `mostExpensive(repairs, n)` | sorted(ціна ↓, клієнт ↑) → limit | `List<Repair>` |
+| — | `findByClient(repairs, name)` | filter → findFirst | `Optional<Repair>` |
+| ★ | `countByTierAndKind(repairs)` | groupingBy(tierLabel, TreeMap, groupingBy(kind, EnumMap, counting)) | вкладена карта |
+
+Цикли підсумку (`RepairAnalyzer.summarize`) і поліморфного блоку замінено на `mapToDouble().sum()`, `max()`,
+`groupingBy()` і `distinct().count()`. Цикл читання рядків лишився: він має побічний ефект (повідомлення з номером рядка).
+
+```text
+java -jar target/lab01-4.0.0.jar --input data/input-lab04.csv --min-price 1000 --top 3 --find-client "Коваль Оксана"
 ```

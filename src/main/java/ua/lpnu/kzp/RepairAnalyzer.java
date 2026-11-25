@@ -1,6 +1,7 @@
 package ua.lpnu.kzp;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -56,17 +57,13 @@ public final class RepairAnalyzer {
      * @return кількість, сумарний час, загальний виторг і найдовший ремонт
      */
     public static RepairSummary summarize(List<Repair> repairs, List<String> errors) {
-        double totalHours = 0.0;
-        double totalRevenue = 0.0;
-        Repair longest = null;
-        for (Repair repair : repairs) {
-            totalHours += repair.hours();
-            totalRevenue += repair.price();
-            // Строга нерівність: при однаковій тривалості лишається перший запис.
-            if (longest == null || repair.hours() > longest.hours()) {
-                longest = repair;
-            }
-        }
+        double totalHours = repairs.stream().mapToDouble(Repair::hours).sum();
+        double totalRevenue = repairs.stream().mapToDouble(Repair::price).sum();
+        // Stream.max зберігає перший із рівних елементів (BinaryOperator.maxBy),
+        // тому за однакової тривалості, як і в циклі ЛР1, лишається перший запис.
+        Repair longest = repairs.stream()
+                .max(Comparator.comparingDouble(Repair::hours))
+                .orElse(null);
         return new RepairSummary(repairs.size(), totalHours, totalRevenue,
                 longest == null ? 0.0 : longest.hours(),
                 longest == null ? "" : longest.client(),
