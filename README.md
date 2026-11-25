@@ -1,4 +1,4 @@
-# Ремонтна майстерня — лабораторна робота № 1 (КЗП, варіант 16)
+# Ремонтна майстерня — лабораторні роботи № 1–2 (КЗП, варіант 16)
 
 Автор: Нестер А.В., група КІ-303.
 
@@ -38,15 +38,15 @@ client;device;diagnosis;hours;price
 ```text
 mvnw.cmd clean verify          # Windows
 ./mvnw clean verify            # macOS / Ubuntu
-java -jar target/lab01-1.0.0.jar --input data/input.csv --output out/report.txt
-java -jar target/lab01-1.0.0.jar --help
-java -jar target/lab01-1.0.0.jar --version
+java -jar target/lab01-2.0.0.jar --input data/input.csv --output out/report.txt
+java -jar target/lab01-2.0.0.jar --help
+java -jar target/lab01-2.0.0.jar --version
 ```
 
 ## Приклад
 
 ```text
-> java -jar target/lab01-1.0.0.jar
+> java -jar target/lab01-2.0.0.jar
 === Звіт ремонтної майстерні ===
 Показник                             Значення
 Кількість коректних записів                 6
@@ -68,13 +68,39 @@ java -jar target/lab01-1.0.0.jar --version
 Коди завершення: `0` — успіх, `1` — помилка аргументів або файла, `2` — немає
 жодного коректного запису.
 
-## Структура
+## Структура (версія 2.0.0, лабораторна робота № 2)
 
 ```text
 src/main/java/ua/lpnu/kzp/
 ├── Main.java            CLI-аргументи та оркестрація
 ├── FileReport.java      читання/запис файлів у UTF-8 через Path
-├── RepairAnalyzer.java  перевірка рядків і обчислення показників
-├── RepairSummary.java   незмінний результат обчислень
+├── Repair.java          клас-сутність: private final поля, інваріанти, fromCsv, Builder
+├── WorkCost.java        record (hours, price): єдине місце числових правил
+├── RepairAnalyzer.java  List<String> → List<Repair> + помилки → показники
+├── RepairSummary.java   record з показниками звіту
 └── ReportFormatter.java форматування звіту (Locale.ROOT, %n)
+baseline/                контрольні вхід і звіт лабораторної роботи № 1
+docs/REPORT-lab01.md     звіт лабораторної роботи № 1
 ```
+
+### Клас `Repair`
+
+- Поля `client`, `device`, `diagnosis`, `hours`, `price` — `private final`, сеттерів немає.
+- Конструктор перевіряє інваріанти: текстові поля не `null` і не порожні (обрізаються),
+  `hours` скінченне і `> 0`, `price` скінченна і `>= 0` (через record `WorkCost`).
+- `Repair.fromCsv(line)` — розбір одного рядка; порядок перевірок і тексти помилок
+  збігаються з лабораторною роботою № 1.
+- `Repair.builder()...build()` — будівник, який викликає той самий конструктор.
+- `toString()` форматує числа з двома знаками через `Locale.ROOT`.
+
+### Відмінності від лабораторної роботи № 1
+
+| Було (1.0.0) | Стало (2.0.0) |
+|--------------|---------------|
+| запис — `String[]` з індексами 0–4 | об'єкт `Repair` з іменованими методами |
+| перевірка в `RepairAnalyzer.parseLine` | перевірка в конструкторі `Repair` і record `WorkCost` |
+| показники рахуються в циклі розбору | `analyze` збирає `List<Repair>`, `summarize` рахує показники |
+| 14 тестів | 38 тестів (старі 14 + 24 нові), тест сумісності з baseline |
+
+Формат CSV, показники й текст звіту не змінилися — це перевіряє
+`BaselineCompatibilityTest` та `Compare-Object` з `baseline/report-lab01.txt`.
