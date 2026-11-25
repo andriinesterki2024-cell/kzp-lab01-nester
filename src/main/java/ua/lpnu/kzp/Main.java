@@ -59,6 +59,9 @@ public final class Main {
     static int run(String[] args, PrintStream out, PrintStream err) {
         Path input = DEFAULT_INPUT;
         Path output = DEFAULT_OUTPUT;
+        double minPrice = StreamReport.DEFAULT_MIN_PRICE;
+        int top = StreamReport.DEFAULT_TOP;
+        String findClient = null;
 
         for (int i = 0; i < args.length; i++) {
             String arg = args[i];
@@ -82,6 +85,23 @@ public final class Main {
                         input = value;
                     } else {
                         output = value;
+                    }
+                }
+                case "--min-price", "--top", "--find-client" -> {
+                    if (i + 1 >= args.length) {
+                        err.printf("Помилка: після %s потрібно вказати значення%n", arg);
+                        return EXIT_ERROR;
+                    }
+                    String value = args[++i];
+                    try {
+                        switch (arg) {
+                            case "--min-price" -> minPrice = parseMinPrice(value);
+                            case "--top" -> top = parseTop(value);
+                            default -> findClient = value;
+                        }
+                    } catch (IllegalArgumentException e) {
+                        err.printf("Помилка: %s%n", e.getMessage());
+                        return EXIT_ERROR;
                     }
                 }
                 default -> {
@@ -110,6 +130,7 @@ public final class Main {
         out.print(report);
         // Поліморфні показники друкуються лише в консоль: файл звіту не змінюється.
         out.print(PolymorphicReport.format(parsed.repairs()));
+        out.print(StreamReport.format(parsed.repairs(), minPrice, top, findClient));
 
         try {
             FileReport.writeReport(output, report);
@@ -123,18 +144,61 @@ public final class Main {
     }
 
     /**
+     * Розбирає поріг вартості для запиту filter.
+     *
+     * @param text значення аргументу
+     * @return скінченне невід'ємне число
+     * @throws IllegalArgumentException якщо значення некоректне
+     */
+    static double parseMinPrice(String text) {
+        double value;
+        try {
+            value = Double.parseDouble(text);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("--min-price має бути числом: " + text, e);
+        }
+        if (!Double.isFinite(value) || value < 0.0) {
+            throw new IllegalArgumentException("--min-price має бути скінченним і не від'ємним: " + text);
+        }
+        return value;
+    }
+
+    /**
+     * Розбирає N для запиту top-N.
+     *
+     * @param text значення аргументу
+     * @return ціле число не менше за 0
+     * @throws IllegalArgumentException якщо значення некоректне
+     */
+    static int parseTop(String text) {
+        int value;
+        try {
+            value = Integer.parseInt(text);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("--top має бути цілим числом: " + text, e);
+        }
+        if (value < 0) {
+            throw new IllegalArgumentException("--top не може бути від'ємним: " + text);
+        }
+        return value;
+    }
+
+    /**
      * Формує текст довідки.
      *
      * @return довідка про параметри запуску
      */
     static String usage() {
         return String.format(
-                "Використання: java -jar lab01-3.0.0.jar [--help] [--version] "
+                "Використання: java -jar lab01-4.0.0.jar [--help] [--version] "
                         + "[--input <файл>] [--output <файл>]%n"
                         + "  --help           показати цю довідку%n"
                         + "  --version        показати версію програми та номер збірки%n"
                         + "  --input <файл>   вхідний CSV (за замовчуванням data/input.csv)%n"
                         + "  --output <файл>  файл звіту (за замовчуванням out/report.txt)%n"
+                        + "  --min-price <грн> поріг для запиту filter (за замовчуванням 1000)%n"
+                        + "  --top <N>        кількість найдорожчих ремонтів (за замовчуванням 3)%n"
+                        + "  --find-client <ім'я> пошук ремонту клієнта (Optional)%n"
                         + "Формат рядка: client;device;diagnosis;hours;price%n");
     }
 
