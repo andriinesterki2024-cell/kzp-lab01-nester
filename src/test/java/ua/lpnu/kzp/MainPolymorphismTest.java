@@ -67,6 +67,6 @@ class MainPolymorphismTest {
     @Test
     void versionMatchesProject() {
         assertEquals(Main.EXIT_OK, Main.run(new String[] {"--version"}, out, err));
-        assertTrue(stdout().startsWith("lab01 4.0.0"));
+        assertTrue(stdout().startsWith("lab01 5.0.0"));
     }
 }

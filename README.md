@@ -1,4 +1,4 @@
-# Ремонтна майстерня — лабораторні роботи № 1–4 (КЗП, варіант 16)
+# Ремонтна майстерня — лабораторні роботи № 1–5 (КЗП, варіант 16)
 
 Автор: Нестер А.В., група КІ-303.
 
@@ -38,15 +38,15 @@ client;device;diagnosis;hours;price
 ```text
 mvnw.cmd clean verify          # Windows
 ./mvnw clean verify            # macOS / Ubuntu
-java -jar target/lab01-3.0.0.jar --input data/input.csv --output out/report.txt
-java -jar target/lab01-3.0.0.jar --help
-java -jar target/lab01-3.0.0.jar --version
+java -jar target/lab01-5.0.0.jar --input data/input.csv --output out/report.txt
+java -jar target/lab01-5.0.0.jar --help
+java -jar target/lab01-5.0.0.jar --version
 ```
 
 ## Приклад
 
 ```text
-> java -jar target/lab01-3.0.0.jar
+> java -jar target/lab01-5.0.0.jar
 === Звіт ремонтної майстерні ===
 Показник                             Значення
 Кількість коректних записів                 6
@@ -122,7 +122,7 @@ RepairDescriber                   вичерпний switch зі зіставл�
 - Файл звіту не змінився (`BaselineCompatibilityTest`, `MainPolymorphismTest`); поліморфний блок друкується лише в консоль.
 
 ```text
-java -jar target/lab01-3.0.0.jar --input data/input-lab03.csv --output out/report-lab03.txt
+java -jar target/lab01-5.0.0.jar --input data/input-lab03.csv --output out/report-lab03.txt
 ```
 
 ## Запити Stream API (версія 4.0.0, лабораторна робота № 4)
@@ -142,4 +142,41 @@ java -jar target/lab01-3.0.0.jar --input data/input-lab03.csv --output out/repor
 
 ```text
 java -jar target/lab01-4.0.0.jar --input data/input-lab04.csv --min-price 1000 --top 3 --find-client "Коваль Оксана"
+```
+
+## Сховище, анотації та CSV-експорт (версія 5.0.0, лабораторна робота № 5)
+
+Пакет `ua.lpnu.kzp.storage` не містить жодної назви предметної області:
+
+| Клас | Призначення |
+|------|-------------|
+| `Repository<T>` | `add`, `addAll`, `all()` (незмінний знімок), `find(Predicate<? super T>)`, `size()` |
+| `@CsvColumn` | `@Retention(RUNTIME)`, `@Target(FIELD)`, `String value()` — назва стовпця |
+| `AnnotatedFields` | пошук анотованих полів рефлексією (з предками), сортування за іменем, `trySetAccessible`, кеш |
+| `CsvExporter` | заголовок + рядки, екранування `,` `"` і перенесень рядка, запис через `Files` у UTF-8 |
+| `JsonExporter` ★ | другий формат через спільний інтерфейс `Exporter<T>` |
+| `CsvParser` | машина станів: кома й перенесення рядка в лапках — дані; `\n`, `\r\n`, `\r` |
+| `DataStorageException` | checked-виняток із причиною (`getCause()`) |
+
+Предметна частина: `RepairRecord` (квитанція, клієнт, пристрій, тип, дата прийому, години, вартість;
+ключ — `ticket` або `ticket + acceptedOn`), `RepairCsvReader.read(Path)`, `ExportReport`.
+
+Формат експорту (стовпці в порядку Java-імен полів):
+
+```text
+прийнято,клієнт,пристрій,години,тип,вартість,квитанція
+2026-01-02,"О'Коннор, ""Шон"" мол.",Смартфон Samsung,2.0,PHONE,3200.0,2
+```
+
+| Рівень | Ситуація | Реакція | `getCause()` |
+|--------|----------|---------|--------------|
+| Модель | квитанція ≤ 0, порожній клієнт, години ≤ 0, ціна < 0 | `IllegalArgumentException` | — |
+| Формат | не 7 полів, незакриті лапки, інший заголовок | `DataStorageException` | — |
+| Значення | хибне число / дата / тип | `DataStorageException` | `NumberFormatException` / `DateTimeParseException` / `IllegalArgumentException` |
+| Файл | файла немає, шлях — каталог | `DataStorageException` | `IOException` |
+| Рефлексія | немає полів із `@CsvColumn` | `DataStorageException` | — |
+
+```text
+java -jar target/lab01-5.0.0.jar --input data/input-lab05.csv --export out/repairs.csv --export-json out/repairs.json
+java -cp target/lab01-5.0.0.jar ua.lpnu.kzp.ExportTiming     # ★ час пошуку полів без кешу і з кешем
 ```
