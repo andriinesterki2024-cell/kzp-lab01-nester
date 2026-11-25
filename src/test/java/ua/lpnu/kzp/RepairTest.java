@@ -16,7 +16,7 @@ class RepairTest {
     @Test
     void constructorStoresValidValues() {
         // Arrange + Act
-        Repair repair = new Repair("Бондар Марія", "Пральна машина Bosch", "Заміна підшипника", 4.5, 2750.0);
+        Repair repair = Repair.create("Бондар Марія", "Пральна машина Bosch", "Заміна підшипника", 4.5, 2750.0);
         // Assert
         assertEquals("Бондар Марія", repair.client());
         assertEquals("Пральна машина Bosch", repair.device());
@@ -28,14 +28,14 @@ class RepairTest {
     @Test
     void constructorAcceptsBoundaryValues() {
         // Граничні коректні значення: безкоштовний ремонт і дуже коротка робота.
-        Repair repair = new Repair("Клієнт", "Пристрій", "Гарантія", 0.01, 0.0);
+        Repair repair = Repair.create("Клієнт", "Пристрій", "Гарантія", 0.01, 0.0);
         assertEquals(0.0, repair.price(), EPS);
         assertEquals(0.01, repair.hours(), EPS);
     }
 
     @Test
     void constructorStripsSpaces() {
-        Repair repair = new Repair("  Іван  ", " Ноутбук ", " Ремонт ", 1.0, 10.0);
+        Repair repair = Repair.create("  Іван  ", " Ноутбук ", " Ремонт ", 1.0, 10.0);
         assertEquals("Іван", repair.client());
         assertEquals("Ноутбук", repair.device());
     }
@@ -43,28 +43,28 @@ class RepairTest {
     @Test
     void constructorRejectsNullAndBlankText() {
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-                () -> new Repair(null, "Ноутбук", "Ремонт", 1.0, 10.0));
+                () -> Repair.create(null, "Ноутбук", "Ремонт", 1.0, 10.0));
         assertEquals("порожнє поле client (клієнт)", e.getMessage());
-        assertThrows(IllegalArgumentException.class, () -> new Repair("Іван", "   ", "Ремонт", 1.0, 10.0));
-        assertThrows(IllegalArgumentException.class, () -> new Repair("Іван", "Ноутбук", "", 1.0, 10.0));
+        assertThrows(IllegalArgumentException.class, () -> Repair.create("Іван", "   ", "Ремонт", 1.0, 10.0));
+        assertThrows(IllegalArgumentException.class, () -> Repair.create("Іван", "Ноутбук", "", 1.0, 10.0));
     }
 
     @ParameterizedTest
     @ValueSource(doubles = {0.0, -1.0, Double.NaN, Double.POSITIVE_INFINITY})
     void constructorRejectsInvalidHours(double hours) {
-        assertThrows(IllegalArgumentException.class, () -> new Repair("Іван", "Ноутбук", "Ремонт", hours, 10.0));
+        assertThrows(IllegalArgumentException.class, () -> Repair.create("Іван", "Ноутбук", "Ремонт", hours, 10.0));
     }
 
     @ParameterizedTest
     @ValueSource(doubles = {-0.01, -500.0, Double.NaN, Double.NEGATIVE_INFINITY})
     void constructorRejectsInvalidPrice(double price) {
-        assertThrows(IllegalArgumentException.class, () -> new Repair("Іван", "Ноутбук", "Ремонт", 1.0, price));
+        assertThrows(IllegalArgumentException.class, () -> Repair.create("Іван", "Ноутбук", "Ремонт", 1.0, price));
     }
 
     @Test
     void fromCsvParsesValidLine() {
         Repair repair = Repair.fromCsv("Коваль Оксана;Смартфон Samsung A54;Заміна екрана;2.0;3200.00");
-        assertEquals(new Repair("Коваль Оксана", "Смартфон Samsung A54", "Заміна екрана", 2.0, 3200.0), repair);
+        assertEquals(Repair.create("Коваль Оксана", "Смартфон Samsung A54", "Заміна екрана", 2.0, 3200.0), repair);
     }
 
     @Test
@@ -80,14 +80,14 @@ class RepairTest {
 
     @Test
     void toStringUsesDotAndTwoDecimals() {
-        Repair repair = new Repair("Іван", "Ноутбук", "Ремонт", 1.5, 650.0);
+        Repair repair = Repair.create("Іван", "Ноутбук", "Ремонт", 1.5, 650.0);
         assertEquals("Repair[client=Іван, device=Ноутбук, diagnosis=Ремонт, hours=1.50, price=650.00]",
                 repair.toString());
     }
 
     @Test
     void costReturnsRecord() {
-        Repair repair = new Repair("Іван", "Ноутбук", "Ремонт", 2.0, 300.0);
+        Repair repair = Repair.create("Іван", "Ноутбук", "Ремонт", 2.0, 300.0);
         assertEquals(new WorkCost(2.0, 300.0), repair.cost());
     }
 
@@ -97,7 +97,7 @@ class RepairTest {
                 .client("Іваненко Петро").device("Ноутбук Lenovo").diagnosis("Заміна термопасти")
                 .hours(1.5).price(650.0)
                 .build();
-        assertEquals(new Repair("Іваненко Петро", "Ноутбук Lenovo", "Заміна термопасти", 1.5, 650.0), built);
+        assertEquals(Repair.create("Іваненко Петро", "Ноутбук Lenovo", "Заміна термопасти", 1.5, 650.0), built);
     }
 
     @Test
