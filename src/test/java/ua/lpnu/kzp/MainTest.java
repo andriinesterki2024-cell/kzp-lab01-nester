@@ -41,7 +41,7 @@ class MainTest {
     void versionPrintsProjectVersion() {
         int code = Main.run(new String[] {"--version"}, out, err);
         assertEquals(Main.EXIT_OK, code);
-        assertTrue(outBytes.toString(StandardCharsets.UTF_8).startsWith("lab01 2.0.0"));
+        assertTrue(outBytes.toString(StandardCharsets.UTF_8).startsWith("lab01 3.0.0"));
     }
 
     @Test

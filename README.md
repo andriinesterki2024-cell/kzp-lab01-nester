@@ -1,4 +1,4 @@
-# Ремонтна майстерня — лабораторні роботи № 1–2 (КЗП, варіант 16)
+# Ремонтна майстерня — лабораторні роботи № 1–3 (КЗП, варіант 16)
 
 Автор: Нестер А.В., група КІ-303.
 
@@ -38,15 +38,15 @@ client;device;diagnosis;hours;price
 ```text
 mvnw.cmd clean verify          # Windows
 ./mvnw clean verify            # macOS / Ubuntu
-java -jar target/lab01-2.0.0.jar --input data/input.csv --output out/report.txt
-java -jar target/lab01-2.0.0.jar --help
-java -jar target/lab01-2.0.0.jar --version
+java -jar target/lab01-3.0.0.jar --input data/input.csv --output out/report.txt
+java -jar target/lab01-3.0.0.jar --help
+java -jar target/lab01-3.0.0.jar --version
 ```
 
 ## Приклад
 
 ```text
-> java -jar target/lab01-2.0.0.jar
+> java -jar target/lab01-3.0.0.jar
 === Звіт ремонтної майстерні ===
 Показник                             Значення
 Кількість коректних записів                 6
@@ -104,3 +104,23 @@ docs/REPORT-lab01.md     звіт лабораторної роботи № 1
 
 Формат CSV, показники й текст звіту не змінилися — це перевіряє
 `BaselineCompatibilityTest` та `Compare-Object` з `baseline/report-lab01.txt`.
+
+## Ієрархія ремонтів (версія 3.0.0, лабораторна робота № 3)
+
+```text
+Repair (abstract sealed)          спільні поля, інваріанти, equals/hashCode, fromCsv, create
+├── GadgetRepair (final)          ремонт у майстерні: totalCost = price; гарантія warrantyDays (30)
+└── ApplianceRepair (final)       побутова техніка з виїздом: totalCost = price + callOutFee (200); гарантія 90
+DeviceKind (enum)                 тип пристрою за назвою: label(), isAppliance(), fromDevice(); OTHER для невідомих
+PolymorphicReport                 консольний блок: кількість за рівнями, унікальні записи (HashSet), вартість за правилами
+RepairDescriber                   вичерпний switch зі зіставленням зі зразком (sealed, без default)
+```
+
+- Підтип обирає лише фабрика `Repair.create` (за `DeviceKind.isAppliance()`); `fromCsv` і `Builder` викликають її.
+- Рівність: однаковий клас (`getClass()`) і однакові поля; підтипи порівнюють власне поле.
+- Обрано абстрактний клас і спадкування: підтипи мають спільний стан і валідацію та відрізняються лише правилами вартості й гарантії.
+- Файл звіту не змінився (`BaselineCompatibilityTest`, `MainPolymorphismTest`); поліморфний блок друкується лише в консоль.
+
+```text
+java -jar target/lab01-3.0.0.jar --input data/input-lab03.csv --output out/report-lab03.txt
+```
