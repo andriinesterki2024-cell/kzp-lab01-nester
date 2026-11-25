@@ -7,7 +7,7 @@
 - Операційна система: Windows 10 Pro; CI — Ubuntu, Windows, macOS.
 - JDK 21 (OpenJDK 21.0.13), Maven 3.9.11 через Maven Wrapper 3.3.4.
 - Виконав: Нестер А.В., група КІ-303. Перевірив: Олексів М.В.
-- Репозиторій: https://github.com/andriinesterki2024-cell/kzplab
+- Репозиторій: https://github.com/andriinesterki2024-cell/kzp-lab01-nester
 
 ## 2. Мета роботи
 
@@ -91,7 +91,7 @@ lab01 1.0.0 (build local)
 `.\mvnw.cmd clean verify` → `Tests run: 14, Failures: 0, Errors: 0, Skipped: 0`;
 SpotBugs: `BugInstance size is 0`; `BUILD SUCCESS`.
 
-GitHub Actions: https://github.com/andriinesterki2024-cell/kzplab/actions (матриця ubuntu/windows/macos, артефакти JAR); тег `v1.0.0`: https://github.com/andriinesterki2024-cell/kzplab/releases/tag/v1.0.0.
+GitHub Actions: https://github.com/andriinesterki2024-cell/kzp-lab01-nester/actions (матриця ubuntu/windows/macos, артефакти JAR); тег `v1.0.0`: https://github.com/andriinesterki2024-cell/kzp-lab01-nester/releases/tag/v1.0.0.
 
 ## 9. Документація
 
