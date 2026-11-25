@@ -112,19 +112,26 @@ public final class RepairAnalyzer {
     }
 
     /**
-     * Перетворює текст на число.
+     * Перетворює текст на скінченне число.
      *
      * @param text      значення поля
      * @param fieldName назва поля для повідомлення
      * @return число
-     * @throws IllegalArgumentException якщо значення нечислове
+     * @throws IllegalArgumentException якщо значення нечислове, NaN або нескінченне
      */
     private static double parseNumber(String text, String fieldName) {
+        double value;
         try {
-            return Double.parseDouble(text);
+            value = Double.parseDouble(text);
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException(String.format(
                     "поле %s має нечислове значення \"%s\"", fieldName, text), e);
         }
+        // parseDouble приймає "NaN" та "Infinity", тому відкидаємо їх окремо.
+        if (Double.isNaN(value) || Double.isInfinite(value)) {
+            throw new IllegalArgumentException(String.format(
+                    "поле %s має недопустиме значення \"%s\"", fieldName, text));
+        }
+        return value;
     }
 }
