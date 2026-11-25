@@ -7,6 +7,7 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Properties;
+import ua.lpnu.kzp.storage.Repository;
 
 /**
  * Точка входу консольної програми «Ремонтна майстерня» (варіант 16).
@@ -62,6 +63,8 @@ public final class Main {
         double minPrice = StreamReport.DEFAULT_MIN_PRICE;
         int top = StreamReport.DEFAULT_TOP;
         String findClient = null;
+        Path exportCsv = null;
+        Path exportJson = null;
 
         for (int i = 0; i < args.length; i++) {
             String arg = args[i];
@@ -85,6 +88,18 @@ public final class Main {
                         input = value;
                     } else {
                         output = value;
+                    }
+                }
+                case "--export", "--export-json" -> {
+                    if (i + 1 >= args.length) {
+                        err.printf("Помилка: після %s потрібно вказати шлях до файла%n", arg);
+                        return EXIT_ERROR;
+                    }
+                    Path value = Path.of(args[++i]);
+                    if ("--export".equals(arg)) {
+                        exportCsv = value;
+                    } else {
+                        exportJson = value;
                     }
                 }
                 case "--min-price", "--top", "--find-client" -> {
@@ -125,12 +140,19 @@ public final class Main {
 
         // Читання → перевірка й обчислення → форматування: кожен крок в окремому класі.
         ParsedRepairs parsed = RepairAnalyzer.parse(lines);
-        RepairSummary summary = RepairAnalyzer.summarize(parsed.repairs(), parsed.errors());
+        // Коректні записи зберігаються в параметризованому сховищі, запити працюють зі знімком.
+        Repository<Repair> repository = new Repository<>();
+        repository.addAll(parsed.repairs());
+        List<Repair> repairs = repository.all();
+        RepairSummary summary = RepairAnalyzer.summarize(repairs, parsed.errors());
         String report = ReportFormatter.format(summary);
         out.print(report);
         // Поліморфні показники друкуються лише в консоль: файл звіту не змінюється.
-        out.print(PolymorphicReport.format(parsed.repairs()));
-        out.print(StreamReport.format(parsed.repairs(), minPrice, top, findClient));
+        out.print(PolymorphicReport.format(repairs));
+        out.print(StreamReport.format(repairs, minPrice, top, findClient));
+        if (exportCsv != null || exportJson != null) {
+            out.print(ExportReport.run(repairs, exportCsv, exportJson));
+        }
 
         try {
             FileReport.writeReport(output, report);
@@ -190,7 +212,7 @@ public final class Main {
      */
     static String usage() {
         return String.format(
-                "Використання: java -jar lab01-4.0.0.jar [--help] [--version] "
+                "Використання: java -jar lab01-5.0.0.jar [--help] [--version] "
                         + "[--input <файл>] [--output <файл>]%n"
                         + "  --help           показати цю довідку%n"
                         + "  --version        показати версію програми та номер збірки%n"
@@ -199,6 +221,8 @@ public final class Main {
                         + "  --min-price <грн> поріг для запиту filter (за замовчуванням 1000)%n"
                         + "  --top <N>        кількість найдорожчих ремонтів (за замовчуванням 3)%n"
                         + "  --find-client <ім'я> пошук ремонту клієнта (Optional)%n"
+                        + "  --export <файл>  експорт квитанцій у CSV і перевірка round-trip%n"
+                        + "  --export-json <файл> експорт квитанцій у JSON%n"
                         + "Формат рядка: client;device;diagnosis;hours;price%n");
     }
 
