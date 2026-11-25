@@ -106,7 +106,8 @@ SpotBugs `BugInstance size is 0`, `BUILD SUCCESS`.
 | RepairAnalyzerTest (лаба 1) | 8 | показники й повідомлення про помилки — без змін |
 | MainTest (лаба 1) | 6 | аргументи CLI, запис файла; змінено лише очікувану версію 2.0.0 |
 
-GitHub Actions: https://github.com/andriinesterki2024-cell/kzp-lab01-nester/actions
+GitHub Actions: запуск №10 після злиття PR #16 — успішно на Ubuntu, Windows і macOS, артефакти `lab01-2.0.0-<ОС>-build10`:
+https://github.com/andriinesterki2024-cell/kzp-lab01-nester/actions/runs/45696067731
 
 ## 9. Документація
 
