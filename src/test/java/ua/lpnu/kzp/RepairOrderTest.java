@@ -11,12 +11,18 @@ import org.junit.jupiter.params.provider.ValueSource;
 /** Перевіряє конструктор, fromCsv, toString і будівник класу {@link RepairOrder}. */
 class RepairOrderTest {
 
+    /* Створює платну заявку — вид за замовчуванням для формату ЛР1–ЛР2. */
+    private static RepairOrder paid(String client, String device, String diagnosis, double hours, double price) {
+        return RepairOrder.create(client, device, diagnosis, hours, price, RepairKind.PAID);
+    }
+
+
     private static final double EPS = 0.0001;
 
     @Test
     void constructorStoresValidValues() {
         // Arrange + Act
-        RepairOrder repair = new RepairOrder("Бондар Марія", "Пральна машина Bosch", "Заміна підшипника", 4.5, 2750.0);
+        RepairOrder repair = paid("Бондар Марія", "Пральна машина Bosch", "Заміна підшипника", 4.5, 2750.0);
         // Assert
         assertEquals("Бондар Марія", repair.client());
         assertEquals("Пральна машина Bosch", repair.device());
@@ -28,14 +34,14 @@ class RepairOrderTest {
     @Test
     void constructorAcceptsBoundaryValues() {
         // Граничні коректні значення: безкоштовний ремонт і дуже коротка робота.
-        RepairOrder repair = new RepairOrder("Клієнт", "Пристрій", "Гарантія", 0.01, 0.0);
+        RepairOrder repair = paid("Клієнт", "Пристрій", "Гарантія", 0.01, 0.0);
         assertEquals(0.0, repair.price(), EPS);
         assertEquals(0.01, repair.hours(), EPS);
     }
 
     @Test
     void constructorStripsSpaces() {
-        RepairOrder repair = new RepairOrder("  Іван  ", " Ноутбук ", " Ремонт ", 1.0, 10.0);
+        RepairOrder repair = paid("  Іван  ", " Ноутбук ", " Ремонт ", 1.0, 10.0);
         assertEquals("Іван", repair.client());
         assertEquals("Ноутбук", repair.device());
     }
@@ -43,28 +49,28 @@ class RepairOrderTest {
     @Test
     void constructorRejectsNullAndBlankText() {
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-                () -> new RepairOrder(null, "Ноутбук", "Ремонт", 1.0, 10.0));
+                () -> paid(null, "Ноутбук", "Ремонт", 1.0, 10.0));
         assertEquals("порожнє поле client (клієнт)", e.getMessage());
-        assertThrows(IllegalArgumentException.class, () -> new RepairOrder("Іван", "   ", "Ремонт", 1.0, 10.0));
-        assertThrows(IllegalArgumentException.class, () -> new RepairOrder("Іван", "Ноутбук", "", 1.0, 10.0));
+        assertThrows(IllegalArgumentException.class, () -> paid("Іван", "   ", "Ремонт", 1.0, 10.0));
+        assertThrows(IllegalArgumentException.class, () -> paid("Іван", "Ноутбук", "", 1.0, 10.0));
     }
 
     @ParameterizedTest
     @ValueSource(doubles = {0.0, -1.0, Double.NaN, Double.POSITIVE_INFINITY})
     void constructorRejectsInvalidHours(double hours) {
-        assertThrows(IllegalArgumentException.class, () -> new RepairOrder("Іван", "Ноутбук", "Ремонт", hours, 10.0));
+        assertThrows(IllegalArgumentException.class, () -> paid("Іван", "Ноутбук", "Ремонт", hours, 10.0));
     }
 
     @ParameterizedTest
     @ValueSource(doubles = {-0.01, -500.0, Double.NaN, Double.NEGATIVE_INFINITY})
     void constructorRejectsInvalidPrice(double price) {
-        assertThrows(IllegalArgumentException.class, () -> new RepairOrder("Іван", "Ноутбук", "Ремонт", 1.0, price));
+        assertThrows(IllegalArgumentException.class, () -> paid("Іван", "Ноутбук", "Ремонт", 1.0, price));
     }
 
     @Test
     void fromCsvParsesValidLine() {
         RepairOrder repair = RepairOrder.fromCsv("Коваль Оксана;Смартфон Samsung A54;Заміна екрана;2.0;3200.00");
-        assertEquals(new RepairOrder("Коваль Оксана", "Смартфон Samsung A54", "Заміна екрана", 2.0, 3200.0), repair);
+        assertEquals(paid("Коваль Оксана", "Смартфон Samsung A54", "Заміна екрана", 2.0, 3200.0), repair);
     }
 
     @Test
@@ -80,14 +86,14 @@ class RepairOrderTest {
 
     @Test
     void toStringUsesDotAndTwoDecimals() {
-        RepairOrder repair = new RepairOrder("Іван", "Ноутбук", "Ремонт", 1.5, 650.0);
-        assertEquals("RepairOrder[client=Іван, device=Ноутбук, diagnosis=Ремонт, hours=1.50, price=650.00]",
+        RepairOrder repair = paid("Іван", "Ноутбук", "Ремонт", 1.5, 650.0);
+        assertEquals("PaidRepair[client=Іван, device=Ноутбук, diagnosis=Ремонт, hours=1.50, price=650.00, kind=PAID]",
                 repair.toString());
     }
 
     @Test
     void hoursPriceReturnsRecord() {
-        RepairOrder repair = new RepairOrder("Іван", "Ноутбук", "Ремонт", 2.0, 300.0);
+        RepairOrder repair = paid("Іван", "Ноутбук", "Ремонт", 2.0, 300.0);
         assertEquals(new HoursPrice(2.0, 300.0), repair.hoursPrice());
     }
 
@@ -97,7 +103,7 @@ class RepairOrderTest {
                 .client("Іваненко Петро").device("Ноутбук Lenovo").diagnosis("Заміна термопасти")
                 .hours(1.5).price(650.0)
                 .build();
-        assertEquals(new RepairOrder("Іваненко Петро", "Ноутбук Lenovo", "Заміна термопасти", 1.5, 650.0), built);
+        assertEquals(paid("Іваненко Петро", "Ноутбук Lenovo", "Заміна термопасти", 1.5, 650.0), built);
     }
 
     @Test
