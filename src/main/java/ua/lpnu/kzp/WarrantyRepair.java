@@ -1,5 +1,6 @@
 package ua.lpnu.kzp;
 
+import java.time.LocalDate;
 import java.util.Objects;
 
 /**
@@ -19,7 +20,7 @@ public final class WarrantyRepair extends RepairOrder {
     private final int warrantyMonths;
 
     /**
-     * Створює гарантійну заявку: {@code super(...)} перевіряє спільну частину, потім перевіряється власне поле.
+     * Створює гарантійну заявку формату ЛР1–ЛР3 (дата й стан — значення за замовчуванням).
      *
      * @param client         клієнт
      * @param device         пристрій
@@ -31,7 +32,26 @@ public final class WarrantyRepair extends RepairOrder {
      */
     public WarrantyRepair(String client, String device, String diagnosis,
                           double hours, double price, int warrantyMonths) {
-        super(client, device, diagnosis, hours, price, RepairKind.WARRANTY);
+        this(client, device, diagnosis, hours, price, RepairOrder.DEFAULT_DATE, RepairOrder.DEFAULT_STATUS, warrantyMonths);
+    }
+
+    /**
+     * Створює гарантійну заявку з датою й станом (ЛР4): {@code super(...)} перевіряє спільну частину,
+     * потім перевіряється власне поле.
+     *
+     * @param client    клієнт
+     * @param device    пристрій
+     * @param diagnosis діагноз (несправність)
+     * @param hours     тривалість, год
+     * @param price     вартість робіт, грн
+     * @param date      дата заявки
+     * @param status    стан заявки
+     * @param warrantyMonths строк гарантії, місяців; у межах [1; 36]
+     * @throws IllegalArgumentException якщо значення порушують інваріанти
+     */
+    public WarrantyRepair(String client, String device, String diagnosis, double hours, double price,
+                          LocalDate date, RepairStatus status, int warrantyMonths) {
+        super(client, device, diagnosis, hours, price, RepairKind.WARRANTY, date, status);
         if (warrantyMonths < 1 || warrantyMonths > MAX_WARRANTY_MONTHS) {
             throw new IllegalArgumentException("warrantyMonths має бути в межах [1; 36]");
         }

@@ -87,7 +87,7 @@ class RepairOrderTest {
     @Test
     void toStringUsesDotAndTwoDecimals() {
         RepairOrder repair = paid("Іван", "Ноутбук", "Ремонт", 1.5, 650.0);
-        assertEquals("PaidRepair[client=Іван, device=Ноутбук, diagnosis=Ремонт, hours=1.50, price=650.00, kind=PAID]",
+        assertEquals("PaidRepair[client=Іван, device=Ноутбук, diagnosis=Ремонт, hours=1.50, price=650.00, kind=PAID, date=2026-01-01, status=DONE]",
                 repair.toString());
     }
 

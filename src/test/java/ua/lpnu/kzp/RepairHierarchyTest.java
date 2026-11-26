@@ -157,8 +157,9 @@ class RepairHierarchyTest {
                 () -> RepairOrder.fromCsv("Іван;Ноутбук;Ремонт;1.0;650.00;ОРЕНДА"));
         assertTrue(kind.getMessage().startsWith("невідомий вид ремонту"));
         IllegalArgumentException count = assertThrows(IllegalArgumentException.class,
-                () -> RepairOrder.fromCsv("Іван;Ноутбук;Ремонт;1.0;650.00;PAID;зайве"));
-        assertEquals("очікується не більше 6 полів, отримано 7", count.getMessage());
+                () -> RepairOrder.fromCsv("Іван;Ноутбук;Ремонт;1.0;650.00;PAID;2026-01-05;new;зайве"));
+        // З ЛР4 формат має ще два необов'язкові поля (дата, стан), тому межа — 8 полів.
+        assertEquals("очікується не більше 8 полів, отримано 9", count.getMessage());
     }
 
     @Test

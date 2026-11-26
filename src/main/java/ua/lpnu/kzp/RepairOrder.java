@@ -1,5 +1,7 @@
 package ua.lpnu.kzp;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.Locale;
 import java.util.Objects;
 
@@ -14,7 +16,8 @@ import java.util.Objects;
  *   <li>{@code client}, {@code device}, {@code diagnosis} — не {@code null} і не порожні;</li>
  *   <li>{@code hours} — скінченне і більше за 0 (правило ЛР1);</li>
  *   <li>{@code price} — скінченна і не менша за 0;</li>
- *   <li>{@code kind} — вид, що відповідає підтипу.</li>
+ *   <li>{@code kind} — вид, що відповідає підтипу;</li>
+ *   <li>{@code date} — дата заявки ({@link LocalDate}), {@code status} — стан (з ЛР4).</li>
  * </ul>
  * <p>Числові правила делеговано record {@link HoursPrice}. Стан незмінний: усі поля
  * {@code private final}, сеттерів немає.</p>
@@ -24,8 +27,17 @@ public abstract sealed class RepairOrder permits WarrantyRepair, PaidRepair {
     /** Кількість обов'язкових полів у рядку CSV (формат ЛР1). */
     public static final int FIELD_COUNT = 5;
 
-    /** Найбільша кількість полів: шосте необов'язкове поле — вид заявки. */
-    public static final int MAX_FIELD_COUNT = 6;
+    /**
+     * Найбільша кількість полів. Необов'язкові поля йдуть за обов'язковими в порядку
+     * {@code kind;date;status} (вид з ЛР3, дата й стан — з ЛР4).
+     */
+    public static final int MAX_FIELD_COUNT = 8;
+
+    /** Дата заявки за замовчуванням для рядків без поля дати (формати ЛР1–ЛР3). */
+    public static final LocalDate DEFAULT_DATE = LocalDate.of(2026, 1, 1);
+
+    /** Стан за замовчуванням для рядків без поля стану: архівні заявки формату ЛР1–ЛР3 завершені. */
+    public static final RepairStatus DEFAULT_STATUS = RepairStatus.DONE;
 
     /** Вид заявки за замовчуванням для рядків формату ЛР1 (без шостого поля). */
     public static final RepairKind DEFAULT_KIND = RepairKind.PAID;
@@ -36,6 +48,8 @@ public abstract sealed class RepairOrder permits WarrantyRepair, PaidRepair {
     private final double hours;
     private final double price;
     private final RepairKind kind;
+    private final LocalDate date;
+    private final RepairStatus status;
 
     /**
      * Ініціалізує й перевіряє спільну частину заявки; викликається з конструктора підтипу через {@code super(...)}.
@@ -46,28 +60,34 @@ public abstract sealed class RepairOrder permits WarrantyRepair, PaidRepair {
      * @param hours     тривалість ремонту, год; скінченна і більша за 0
      * @param price     вартість робіт, грн; скінченна і не менша за 0
      * @param kind      вид заявки, який задає підтип
+     * @param date      дата заявки, не {@code null}
+     * @param status    стан заявки, не {@code null}
      * @throws IllegalArgumentException якщо значення порушує інваріант
      */
     protected RepairOrder(String client, String device, String diagnosis, double hours, double price,
-                          RepairKind kind) {
+                          RepairKind kind, LocalDate date, RepairStatus status) {
         // Перевірки виконуються під час обчислення аргументів, ще до створення об'єкта,
         // тож частково ініціалізована заявка не може з'явитися (SpotBugs CT_CONSTRUCTOR_THROW).
         this(requireText(client, "client (клієнт)"),
                 requireText(device, "device (пристрій)"),
                 requireText(diagnosis, "diagnosis (діагноз)"),
                 new HoursPrice(hours, price),
-                Objects.requireNonNull(kind, "kind"));
+                Objects.requireNonNull(kind, "kind"),
+                Objects.requireNonNull(date, "date"),
+                Objects.requireNonNull(status, "status"));
     }
 
     /* Присвоює вже перевірені значення; сам нічого не перевіряє. */
     private RepairOrder(String client, String device, String diagnosis, HoursPrice hoursPrice,
-                        RepairKind kind) {
+                        RepairKind kind, LocalDate date, RepairStatus status) {
         this.client = client;
         this.device = device;
         this.diagnosis = diagnosis;
         this.hours = hoursPrice.hours();
         this.price = hoursPrice.price();
         this.kind = kind;
+        this.date = date;
+        this.status = status;
     }
 
     /**
@@ -92,20 +112,39 @@ public abstract sealed class RepairOrder permits WarrantyRepair, PaidRepair {
      */
     public static RepairOrder create(String client, String device, String diagnosis,
                                      double hours, double price, RepairKind kind) {
+        return create(client, device, diagnosis, hours, price, kind, DEFAULT_DATE, DEFAULT_STATUS);
+    }
+
+    /**
+     * Фабрика з датою й станом заявки (ЛР4). Це єдине місце, де враховується вид.
+     *
+     * @param client    клієнт
+     * @param device    пристрій
+     * @param diagnosis діагноз (несправність)
+     * @param hours     тривалість, год
+     * @param price     вартість робіт, грн
+     * @param kind      вид заявки
+     * @param date      дата заявки
+     * @param status    стан заявки
+     * @return {@link WarrantyRepair} або {@link PaidRepair}
+     * @throws IllegalArgumentException якщо значення порушують інваріанти
+     */
+    public static RepairOrder create(String client, String device, String diagnosis, double hours,
+                                     double price, RepairKind kind, LocalDate date, RepairStatus status) {
         return switch (Objects.requireNonNull(kind, "kind")) {
-            case WARRANTY -> new WarrantyRepair(client, device, diagnosis, hours, price,
+            case WARRANTY -> new WarrantyRepair(client, device, diagnosis, hours, price, date, status,
                     WarrantyRepair.DEFAULT_WARRANTY_MONTHS);
-            case PAID -> new PaidRepair(client, device, diagnosis, hours, price,
+            case PAID -> new PaidRepair(client, device, diagnosis, hours, price, date, status,
                     PaidRepair.DEFAULT_DISCOUNT_RATE);
         };
     }
 
     /**
-     * Створює заявку з рядка CSV {@code client;device;diagnosis;hours;price[;kind]}.
+     * Створює заявку з рядка CSV {@code client;device;diagnosis;hours;price[;kind[;date[;status]]]}.
      *
-     * <p>Формат ЛР1 (5 полів) лишається коректним — такий рядок стає платною заявкою, тому
-     * контрольний файл і звіт ЛР1 не змінюються. Порядок перевірок і тексти помилок
-     * збігаються з попередніми роботами.</p>
+     * <p>Формати ЛР1 (5 полів) і ЛР3 (6 полів) лишаються коректними: відсутні поля отримують
+     * значення {@link #DEFAULT_KIND}, {@link #DEFAULT_DATE}, {@link #DEFAULT_STATUS}, тому
+     * контрольний файл і звіт ЛР1 не змінюються. Дата — ISO {@code YYYY-MM-DD}.</p>
      *
      * @param line рядок файла
      * @return заявка відповідного підтипу
@@ -130,8 +169,10 @@ public abstract sealed class RepairOrder permits WarrantyRepair, PaidRepair {
         String diagnosis = requireText(fields[2], "diagnosis (діагноз)");
         double hours = parseNumber(fields[3], "hours");
         double price = parseNumber(fields[4], "price");
-        RepairKind kind = fields.length == MAX_FIELD_COUNT ? RepairKind.parse(fields[5]) : DEFAULT_KIND;
-        return create(client, device, diagnosis, hours, price, kind);
+        RepairKind kind = fields.length > 5 ? RepairKind.parse(fields[5]) : DEFAULT_KIND;
+        LocalDate date = fields.length > 6 ? parseDate(fields[6]) : DEFAULT_DATE;
+        RepairStatus status = fields.length > 7 ? RepairStatus.parse(fields[7]) : DEFAULT_STATUS;
+        return create(client, device, diagnosis, hours, price, kind, date, status);
     }
 
     /**
@@ -198,6 +239,33 @@ public abstract sealed class RepairOrder permits WarrantyRepair, PaidRepair {
     }
 
     /**
+     * Повертає дату заявки.
+     *
+     * @return дата
+     */
+    public final LocalDate date() {
+        return date;
+    }
+
+    /**
+     * Повертає стан заявки.
+     *
+     * @return значення {@link RepairStatus}
+     */
+    public final RepairStatus status() {
+        return status;
+    }
+
+    /**
+     * Чи заявка незавершена (нова або в роботі).
+     *
+     * @return {@code true}, якщо стан не {@link RepairStatus#DONE}
+     */
+    public final boolean isOpen() {
+        return status.isOpen();
+    }
+
+    /**
      * Повертає тривалість і вартість як незмінне значення.
      *
      * @return record {@link HoursPrice}
@@ -235,24 +303,26 @@ public abstract sealed class RepairOrder permits WarrantyRepair, PaidRepair {
                 && client.equals(that.client)
                 && device.equals(that.device)
                 && diagnosis.equals(that.diagnosis)
-                && kind == that.kind;
+                && kind == that.kind
+                && date.equals(that.date)
+                && status == that.status;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getClass(), client, device, diagnosis, hours, price, kind);
+        return Objects.hash(getClass(), client, device, diagnosis, hours, price, kind, date, status);
     }
 
     /**
      * Повертає подання з назвою підтипу й двома знаками після крапки (Locale.ROOT).
      *
-     * @return рядок на зразок {@code PaidRepair[client=..., hours=4.50, price=2750.00, kind=PAID]}
+     * @return рядок на зразок {@code PaidRepair[client=..., price=2750.00, kind=PAID, date=2026-01-01, status=DONE]}
      */
     @Override
     public String toString() {
         return String.format(Locale.ROOT,
-                "%s[client=%s, device=%s, diagnosis=%s, hours=%.2f, price=%.2f, kind=%s]",
-                getClass().getSimpleName(), client, device, diagnosis, hours, price, kind);
+                "%s[client=%s, device=%s, diagnosis=%s, hours=%.2f, price=%.2f, kind=%s, date=%s, status=%s]",
+                getClass().getSimpleName(), client, device, diagnosis, hours, price, kind, date, status);
     }
 
     /**
@@ -267,6 +337,16 @@ public abstract sealed class RepairOrder permits WarrantyRepair, PaidRepair {
             throw new IllegalArgumentException("порожнє поле " + fieldName);
         }
         return value.strip();
+    }
+
+    private static LocalDate parseDate(String text) {
+        String trimmed = text.strip();
+        try {
+            return LocalDate.parse(trimmed);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException(String.format(
+                    "поле date має бути датою YYYY-MM-DD, отримано \"%s\"", trimmed), e);
+        }
     }
 
     private static double parseNumber(String text, String fieldName) {
@@ -290,6 +370,8 @@ public abstract sealed class RepairOrder permits WarrantyRepair, PaidRepair {
         private double hours = Double.NaN;
         private double price = Double.NaN;
         private RepairKind kind = DEFAULT_KIND;
+        private LocalDate date = DEFAULT_DATE;
+        private RepairStatus status = DEFAULT_STATUS;
 
         private Builder() {
         }
@@ -361,13 +443,35 @@ public abstract sealed class RepairOrder permits WarrantyRepair, PaidRepair {
         }
 
         /**
+         * Задає дату заявки.
+         *
+         * @param value дата
+         * @return цей будівник
+         */
+        public Builder date(LocalDate value) {
+            this.date = value;
+            return this;
+        }
+
+        /**
+         * Задає стан заявки.
+         *
+         * @param value стан
+         * @return цей будівник
+         */
+        public Builder status(RepairStatus value) {
+            this.status = value;
+            return this;
+        }
+
+        /**
          * Створює заявку через фабрику {@link RepairOrder#create}.
          *
          * @return нова незмінна заявка
          * @throws IllegalArgumentException якщо значення порушують інваріанти
          */
         public RepairOrder build() {
-            return create(client, device, diagnosis, hours, price, kind);
+            return create(client, device, diagnosis, hours, price, kind, date, status);
         }
     }
 }
