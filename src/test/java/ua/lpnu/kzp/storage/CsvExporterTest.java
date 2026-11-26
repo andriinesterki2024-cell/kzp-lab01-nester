@@ -69,8 +69,8 @@ class CsvExporterTest {
 
     @Test
     void columnsAreSortedByFieldName() throws DataStorageException {
-        List<String> names = AnnotatedFields.of(RepairRecord.class).stream().map(Field::getName).toList();
-        assertEquals(List.of("acceptedOn", "client", "device", "hours", "kind", "price", "ticket"), names);
+        List<String> names = AnnotatedFields.of(RepairOrderRecord.class).stream().map(Field::getName).toList();
+        assertEquals(List.of("cost", "customer", "date", "device", "fault", "kind"), names);
     }
 
     @Test
