@@ -57,6 +57,6 @@ class MainPolymorphismTest {
     void versionMatchesProject() {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         Main.run(new String[] {"--version"}, new PrintStream(bytes, true, StandardCharsets.UTF_8), System.err);
-        assertTrue(bytes.toString(StandardCharsets.UTF_8).startsWith("lab01 4.0.0"));
+        assertTrue(bytes.toString(StandardCharsets.UTF_8).startsWith("lab01 5.0.0"));
     }
 }
