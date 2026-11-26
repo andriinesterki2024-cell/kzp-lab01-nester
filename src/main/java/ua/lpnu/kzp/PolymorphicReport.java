@@ -1,11 +1,10 @@
 package ua.lpnu.kzp;
 
 import java.util.EnumMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Поліморфні показники: обробляє заявки лише через спільний тип {@link RepairOrder},
@@ -24,24 +23,22 @@ public final class PolymorphicReport {
      * @return блок тексту для консолі
      */
     public static String format(List<RepairOrder> orders) {
-        // EnumMap зберігає порядок оголошення констант — вивід стабільний.
-        Map<RepairKind, Integer> perKind = new EnumMap<>(RepairKind.class);
-        double totalFinalCost = 0.0;
-        for (RepairOrder order : orders) {
-            // Викликається реалізація фактичного підтипу — динамічне зв'язування.
-            totalFinalCost += order.finalCost();
-            perKind.merge(order.kind(), 1, Integer::sum);
-        }
-        // HashSet використовує equals/hashCode: логічно рівні заявки рахуються один раз.
-        Set<RepairOrder> unique = new HashSet<>(orders);
+        // ЛР4: цикл замінено потоками. EnumMap зберігає порядок оголошення констант.
+        Map<RepairKind, Long> perKind = orders.stream()
+                .collect(Collectors.groupingBy(RepairOrder::kind,
+                        () -> new EnumMap<>(RepairKind.class), Collectors.counting()));
+        // finalCost() — реалізація фактичного підтипу (динамічне зв'язування).
+        double totalFinalCost = orders.stream().mapToDouble(RepairOrder::finalCost).sum();
+        // distinct використовує equals/hashCode: логічно рівні заявки рахуються один раз.
+        long unique = orders.stream().distinct().count();
 
         StringBuilder sb = new StringBuilder();
         sb.append(String.format(Locale.ROOT, "--- Поліморфні показники ---%n"));
-        for (Map.Entry<RepairKind, Integer> entry : perKind.entrySet()) {
+        for (Map.Entry<RepairKind, Long> entry : perKind.entrySet()) {
             sb.append(String.format(Locale.ROOT, "%-32s %12d%n",
                     "Заявок: " + entry.getKey().label(), entry.getValue()));
         }
-        sb.append(String.format(Locale.ROOT, "%-32s %12d%n", "Унікальних заявок", unique.size()));
+        sb.append(String.format(Locale.ROOT, "%-32s %12d%n", "Унікальних заявок", unique));
         sb.append(String.format(Locale.ROOT, "%-32s %12.2f%n", "Остаточна вартість, грн", totalFinalCost));
         return sb.toString();
     }

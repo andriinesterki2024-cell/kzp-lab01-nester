@@ -1,5 +1,6 @@
 package ua.lpnu.kzp;
 
+import java.time.LocalDate;
 import java.util.Objects;
 
 /**
@@ -22,7 +23,7 @@ public final class PaidRepair extends RepairOrder {
     private final double discountRate;
 
     /**
-     * Створює платну заявку: {@code super(...)} перевіряє спільну частину, потім перевіряється власне поле.
+     * Створює платну заявку формату ЛР1–ЛР3 (дата й стан — значення за замовчуванням).
      *
      * @param client       клієнт
      * @param device       пристрій
@@ -34,7 +35,26 @@ public final class PaidRepair extends RepairOrder {
      */
     public PaidRepair(String client, String device, String diagnosis,
                       double hours, double price, double discountRate) {
-        super(client, device, diagnosis, hours, price, RepairKind.PAID);
+        this(client, device, diagnosis, hours, price, RepairOrder.DEFAULT_DATE, RepairOrder.DEFAULT_STATUS, discountRate);
+    }
+
+    /**
+     * Створює платну заявку з датою й станом (ЛР4): {@code super(...)} перевіряє спільну частину,
+     * потім перевіряється власне поле.
+     *
+     * @param client    клієнт
+     * @param device    пристрій
+     * @param diagnosis діагноз (несправність)
+     * @param hours     тривалість, год
+     * @param price     вартість робіт, грн
+     * @param date      дата заявки
+     * @param status    стан заявки
+     * @param discountRate частка знижки для дорогих ремонтів; скінченна, у межах [0; 0.5]
+     * @throws IllegalArgumentException якщо значення порушують інваріанти
+     */
+    public PaidRepair(String client, String device, String diagnosis, double hours, double price,
+                      LocalDate date, RepairStatus status, double discountRate) {
+        super(client, device, diagnosis, hours, price, RepairKind.PAID, date, status);
         if (!Double.isFinite(discountRate) || discountRate < 0.0 || discountRate > MAX_DISCOUNT_RATE) {
             throw new IllegalArgumentException("discountRate має бути в межах [0; 0.5]");
         }

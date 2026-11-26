@@ -1,4 +1,4 @@
-# Ремонтна майстерня — лабораторні роботи № 1–3 (КЗП, варіант 16)
+# Ремонтна майстерня — лабораторні роботи № 1–4 (КЗП, варіант 16)
 
 Автор: Нестер А.В., група КІ-303.
 
@@ -38,15 +38,15 @@ client;device;diagnosis;hours;price
 ```text
 mvnw.cmd clean verify          # Windows
 ./mvnw clean verify            # macOS / Ubuntu
-java -jar target/lab01-3.0.0.jar --input data/input.csv --output out/report.txt
-java -jar target/lab01-3.0.0.jar --help
-java -jar target/lab01-3.0.0.jar --version
+java -jar target/lab01-4.0.0.jar --input data/input.csv --output out/report.txt
+java -jar target/lab01-4.0.0.jar --help
+java -jar target/lab01-4.0.0.jar --version
 ```
 
 ## Приклад
 
 ```text
-> java -jar target/lab01-3.0.0.jar
+> java -jar target/lab01-4.0.0.jar
 === Звіт ремонтної майстерні ===
 Показник                             Значення
 Кількість коректних записів                 6
@@ -126,5 +126,26 @@ enum `RepairKind`, поліморфна операція — остаточна 
 - Поліморфний блок (`PolymorphicReport`) друкується лише в консоль; ★ `RepairDescriber` — вичерпний `switch` за sealed-ієрархією.
 
 ```text
-java -jar target/lab01-3.0.0.jar --input data/input-lab03.csv --output out/report-lab03.txt
+java -jar target/lab01-4.0.0.jar --input data/input-lab03.csv --output out/report-lab03.txt
+```
+
+## Запити Stream API (версія 4.0.0, лабораторна робота № 4)
+
+За таблицею варіантів ЛР4 (варіант 16) заявка має клієнта, пристрій, несправність, **дату**, вартість і вид;
+додано також **стан** (`RepairStatus`: `new`, `in_progress`, `done`) для фільтра «заявка незавершена».
+Формат CSV: `client;device;diagnosis;hours;price[;kind[;date[;status]]]`; рядки ЛР1–3 отримують
+вид PAID, дату 2026-01-01 і стан DONE, тому звіт ЛР1 не змінився.
+
+| № | Метод `RepairQueries` | Операції | Результат |
+|---|------------------------|----------|-----------|
+| 1 | `openOrders` | filter(isOpen) → toList | `List<RepairOrder>` |
+| 2 | `devices` | map(device) → distinct → sorted(Collator uk) → toList | `List<String>` |
+| 3 | `costByKind` | groupingBy(kind, EnumMap, summingDouble(price)) | `Map<RepairKind, Double>` |
+| 4 | `costStatistics` | summarizingDouble(price) | `DoubleSummaryStatistics` |
+| 5 | `mostExpensive(orders, N)` | sorted(вартість ↓, дата ↑) → limit(N), N = 5 | `List<RepairOrder>` |
+| — | `findByClient` | filter → findFirst | `Optional<RepairOrder>` |
+| ★ | `countByKindAndStatus` | groupingBy(kind, groupingBy(status, counting())) | вкладена карта |
+
+```text
+java -jar target/lab01-4.0.0.jar --input data/input-lab04.csv --top 5 --find-client "Коваль Оксана"
 ```

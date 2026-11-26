@@ -1,7 +1,9 @@
 package ua.lpnu.kzp;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Перетворює рядки CSV на об'єкти {@link RepairOrder} і обчислює показники варіанта 16.
@@ -56,21 +58,15 @@ public final class RepairAnalyzer {
      * @return кількість, сумарний час, загальний виторг і найдовший ремонт
      */
     public static RepairSummary summarize(List<RepairOrder> repairs, List<String> errors) {
-        double totalHours = 0.0;
-        double totalRevenue = 0.0;
-        RepairOrder longest = null;
-        for (RepairOrder repair : repairs) {
-            totalHours += repair.hours();
-            totalRevenue += repair.price();
-            // Строга нерівність: при однаковій тривалості лишається перший запис.
-            if (longest == null || repair.hours() > longest.hours()) {
-                longest = repair;
-            }
-        }
+        // ЛР4: цикл з накопичувачами замінено потоками; кожен показник описано окремо.
+        double totalHours = repairs.stream().mapToDouble(RepairOrder::hours).sum();
+        double totalRevenue = repairs.stream().mapToDouble(RepairOrder::price).sum();
+        // Stream.max повертає перший із рівних елементів, як і цикл ЛР1 зі строгою нерівністю.
+        Optional<RepairOrder> longest = repairs.stream().max(Comparator.comparingDouble(RepairOrder::hours));
         return new RepairSummary(repairs.size(), totalHours, totalRevenue,
-                longest == null ? 0.0 : longest.hours(),
-                longest == null ? "" : longest.client(),
-                longest == null ? "" : longest.device(),
+                longest.map(RepairOrder::hours).orElse(0.0),
+                longest.map(RepairOrder::client).orElse(""),
+                longest.map(RepairOrder::device).orElse(""),
                 errors);
     }
 }
