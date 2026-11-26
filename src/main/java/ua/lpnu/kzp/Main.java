@@ -59,6 +59,8 @@ public final class Main {
     static int run(String[] args, PrintStream out, PrintStream err) {
         Path input = DEFAULT_INPUT;
         Path output = DEFAULT_OUTPUT;
+        int top = RepairQueries.DEFAULT_TOP;
+        String findClient = null;
 
         for (int i = 0; i < args.length; i++) {
             String arg = args[i];
@@ -82,6 +84,23 @@ public final class Main {
                         input = value;
                     } else {
                         output = value;
+                    }
+                }
+                case "--top", "--find-client" -> {
+                    if (i + 1 >= args.length) {
+                        err.printf("Помилка: після %s потрібно вказати значення%n", arg);
+                        return EXIT_ERROR;
+                    }
+                    String value = args[++i];
+                    if ("--top".equals(arg)) {
+                        try {
+                            top = parseTop(value);
+                        } catch (IllegalArgumentException e) {
+                            err.printf("Помилка: %s%n", e.getMessage());
+                            return EXIT_ERROR;
+                        }
+                    } else {
+                        findClient = value;
                     }
                 }
                 default -> {
@@ -110,6 +129,7 @@ public final class Main {
         out.print(report);
         // Поліморфні показники друкуються лише в консоль: файл звіту не змінюється.
         out.print(PolymorphicReport.format(parsed.orders()));
+        out.print(StreamReport.format(parsed.orders(), top, findClient));
 
         try {
             FileReport.writeReport(output, report);
@@ -129,13 +149,36 @@ public final class Main {
      */
     static String usage() {
         return String.format(
-                "Використання: java -jar lab01-3.0.0.jar [--help] [--version] "
+                "Використання: java -jar lab01-4.0.0.jar [--help] [--version] "
                         + "[--input <файл>] [--output <файл>]%n"
                         + "  --help           показати цю довідку%n"
                         + "  --version        показати версію програми та номер збірки%n"
                         + "  --input <файл>   вхідний CSV (за замовчуванням data/input.csv)%n"
                         + "  --output <файл>  файл звіту (за замовчуванням out/report.txt)%n"
-                        + "Формат рядка: client;device;diagnosis;hours;price[;kind], kind = WARRANTY або PAID%n");
+                        + "  --top <N>        кількість найдорожчих заявок (за замовчуванням 5)%n"
+                        + "  --find-client <ім'я> знайти першу заявку клієнта%n"
+                        + "Формат рядка: client;device;diagnosis;hours;price[;kind[;date[;status]]]%n"
+                        + "  kind = WARRANTY або PAID, date = YYYY-MM-DD, status = new, in_progress або done%n");
+    }
+
+    /**
+     * Перевіряє значення N для top-N.
+     *
+     * @param text текст аргументу
+     * @return N, не від'ємне
+     * @throws IllegalArgumentException якщо текст не є цілим числом або N від'ємне
+     */
+    static int parseTop(String text) {
+        int value;
+        try {
+            value = Integer.parseInt(text.strip());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("--top має бути цілим числом", e);
+        }
+        if (value < 0) {
+            throw new IllegalArgumentException("--top не може бути від'ємним");
+        }
+        return value;
     }
 
     /**
