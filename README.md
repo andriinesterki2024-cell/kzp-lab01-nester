@@ -74,32 +74,35 @@ java -jar target/lab01-2.0.0.jar --version
 src/main/java/ua/lpnu/kzp/
 ├── Main.java            CLI-аргументи та оркестрація
 ├── FileReport.java      читання/запис файлів у UTF-8 через Path
-├── Repair.java          клас-сутність: private final поля, інваріанти, fromCsv, Builder
-├── WorkCost.java        record (hours, price): єдине місце числових правил
-├── RepairAnalyzer.java  List<String> → List<Repair> + помилки → показники
+├── RepairOrder.java     клас-сутність: private final поля, інваріанти, fromCsv, Builder
+├── HoursPrice.java      record (hours, price): єдине місце числових правил
+├── RepairAnalyzer.java  List<String> → List<RepairOrder> + помилки → показники
 ├── RepairSummary.java   record з показниками звіту
 └── ReportFormatter.java форматування звіту (Locale.ROOT, %n)
 baseline/                контрольні вхід і звіт лабораторної роботи № 1
 docs/REPORT-lab01.md     звіт лабораторної роботи № 1
 ```
 
-### Клас `Repair`
+### Клас `RepairOrder`
+
+Назви класу-сутності й record узято з таблиці варіантів ЛР2 (варіант 16: `RepairOrder`, `HoursPrice`).
+
 
 - Поля `client`, `device`, `diagnosis`, `hours`, `price` — `private final`, сеттерів немає.
 - Конструктор перевіряє інваріанти: текстові поля не `null` і не порожні (обрізаються),
-  `hours` скінченне і `> 0`, `price` скінченна і `>= 0` (через record `WorkCost`).
-- `Repair.fromCsv(line)` — розбір одного рядка; порядок перевірок і тексти помилок
+  `hours` скінченне і `> 0`, `price` скінченна і `>= 0` (через record `HoursPrice`).
+- `RepairOrder.fromCsv(line)` — розбір одного рядка; порядок перевірок і тексти помилок
   збігаються з лабораторною роботою № 1.
-- `Repair.builder()...build()` — будівник, який викликає той самий конструктор.
+- `RepairOrder.builder()...build()` — будівник, який викликає той самий конструктор.
 - `toString()` форматує числа з двома знаками через `Locale.ROOT`.
 
 ### Відмінності від лабораторної роботи № 1
 
 | Було (1.0.0) | Стало (2.0.0) |
 |--------------|---------------|
-| запис — `String[]` з індексами 0–4 | об'єкт `Repair` з іменованими методами |
-| перевірка в `RepairAnalyzer.parseLine` | перевірка в конструкторі `Repair` і record `WorkCost` |
-| показники рахуються в циклі розбору | `analyze` збирає `List<Repair>`, `summarize` рахує показники |
+| запис — `String[]` з індексами 0–4 | об'єкт `RepairOrder` з іменованими методами |
+| перевірка в `RepairAnalyzer.parseLine` | перевірка в конструкторі `RepairOrder` і record `HoursPrice` |
+| показники рахуються в циклі розбору | `analyze` збирає `List<RepairOrder>`, `summarize` рахує показники |
 | 14 тестів | 38 тестів (старі 14 + 24 нові), тест сумісності з baseline |
 
 Формат CSV, показники й текст звіту не змінилися — це перевіряє
