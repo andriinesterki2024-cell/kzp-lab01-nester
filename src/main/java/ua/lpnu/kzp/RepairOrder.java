@@ -4,20 +4,20 @@ import java.util.Locale;
 import java.util.Objects;
 
 /**
- * Незмінний запис про ремонт у майстерні (варіант 16).
+ * Заявка на ремонт у майстерні — клас-сутність варіанта 16 ({@code RepairOrder}).
  *
  * <p>Стан зберігається в {@code private final} полях і не має сеттерів, тому після
  * успішного створення об'єкт завжди задовольняє інваріанти:</p>
  * <ul>
  *   <li>{@code client}, {@code device}, {@code diagnosis} — не {@code null} і не порожні;</li>
- *   <li>{@code hours} — скінченне і більше за 0;</li>
+ *   <li>{@code hours} — скінченне і більше за 0 (правило ЛР1: ремонт без витраченого часу не має сенсу);</li>
  *   <li>{@code price} — скінченна і не менша за 0.</li>
  * </ul>
- * <p>Числові правила делеговано record {@link WorkCost}, текстові — методу
+ * <p>Числові правила делеговано record {@link HoursPrice}, текстові — методу
  * {@link #requireText(String, String)}; і конструктор, і {@link #fromCsv(String)},
  * і {@link Builder} використовують ті самі перевірки.</p>
  */
-public final class Repair {
+public final class RepairOrder {
 
     /** Кількість полів у рядку CSV. */
     public static final int FIELD_COUNT = 5;
@@ -38,12 +38,12 @@ public final class Repair {
      * @param price     вартість, грн; скінченна і не менша за 0
      * @throws IllegalArgumentException якщо будь-яке значення порушує інваріант
      */
-    public Repair(String client, String device, String diagnosis, double hours, double price) {
+    public RepairOrder(String client, String device, String diagnosis, double hours, double price) {
         this.client = requireText(client, "client (клієнт)");
         this.device = requireText(device, "device (пристрій)");
         this.diagnosis = requireText(diagnosis, "diagnosis (діагноз)");
         // Конструктор record кидає IllegalArgumentException для хибних чисел.
-        WorkCost cost = new WorkCost(hours, price);
+        HoursPrice cost = new HoursPrice(hours, price);
         this.hours = cost.hours();
         this.price = cost.price();
     }
@@ -59,7 +59,7 @@ public final class Repair {
      * @return коректний запис
      * @throws IllegalArgumentException з поясненням причини, якщо рядок некоректний
      */
-    public static Repair fromCsv(String line) {
+    public static RepairOrder fromCsv(String line) {
         if (line == null || line.isBlank()) {
             throw new IllegalArgumentException("порожній рядок");
         }
@@ -75,7 +75,7 @@ public final class Repair {
         String diagnosis = requireText(fields[2], "diagnosis (діагноз)");
         double hours = parseNumber(fields[3], "hours");
         double price = parseNumber(fields[4], "price");
-        return new Repair(client, device, diagnosis, hours, price);
+        return new RepairOrder(client, device, diagnosis, hours, price);
     }
 
     /**
@@ -135,10 +135,10 @@ public final class Repair {
     /**
      * Повертає тривалість і вартість як незмінне значення.
      *
-     * @return record {@link WorkCost}
+     * @return record {@link HoursPrice}
      */
-    public WorkCost cost() {
-        return new WorkCost(hours, price);
+    public HoursPrice hoursPrice() {
+        return new HoursPrice(hours, price);
     }
 
     @Override
@@ -146,7 +146,7 @@ public final class Repair {
         if (this == other) {
             return true;
         }
-        if (!(other instanceof Repair that)) {
+        if (!(other instanceof RepairOrder that)) {
             return false;
         }
         return Double.compare(hours, that.hours) == 0
@@ -164,12 +164,12 @@ public final class Repair {
     /**
      * Повертає зрозуміле подання з двома знаками після крапки (Locale.ROOT).
      *
-     * @return рядок на зразок {@code Repair[client=Бондар Марія, device=..., hours=4.50, price=2750.00]}
+     * @return рядок на зразок {@code RepairOrder[client=Бондар Марія, device=..., hours=4.50, price=2750.00]}
      */
     @Override
     public String toString() {
         return String.format(Locale.ROOT,
-                "Repair[client=%s, device=%s, diagnosis=%s, hours=%.2f, price=%.2f]",
+                "RepairOrder[client=%s, device=%s, diagnosis=%s, hours=%.2f, price=%.2f]",
                 client, device, diagnosis, hours, price);
     }
 
@@ -198,7 +198,7 @@ public final class Repair {
     }
 
     /**
-     * Будівник для зручного створення {@link Repair}. Метод {@link #build()} викликає
+     * Будівник для зручного створення {@link RepairOrder}. Метод {@link #build()} викликає
      * конструктор, тому будівник не обходить жодної перевірки. Повторне використання
      * будівника не змінює раніше створених об'єктів, бо вони незмінні.
      */
@@ -268,14 +268,14 @@ public final class Repair {
         }
 
         /**
-         * Створює запис через конструктор {@link Repair}; незадані числа залишаються NaN
+         * Створює запис через конструктор {@link RepairOrder}; незадані числа залишаються NaN
          * і відхиляються тією самою перевіркою.
          *
          * @return новий незмінний запис
          * @throws IllegalArgumentException якщо значення порушують інваріанти
          */
-        public Repair build() {
-            return new Repair(client, device, diagnosis, hours, price);
+        public RepairOrder build() {
+            return new RepairOrder(client, device, diagnosis, hours, price);
         }
     }
 }

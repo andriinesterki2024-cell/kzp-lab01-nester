@@ -4,9 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Перетворює рядки CSV на об'єкти {@link Repair} і обчислює показники варіанта 16.
+ * Перетворює рядки CSV на об'єкти {@link RepairOrder} і обчислює показники варіанта 16.
  *
- * <p>Розбір і перевірка рядка повністю делеговані {@link Repair#fromCsv(String)};
+ * <p>Розбір і перевірка рядка повністю делеговані {@link RepairOrder#fromCsv(String)};
  * цей клас лише збирає коректні записи в список, фіксує помилки з номерами рядків
  * і рахує показники за списком об'єктів.</p>
  */
@@ -17,18 +17,18 @@ public final class RepairAnalyzer {
     }
 
     /**
-     * Обробляє всі рядки: коректні перетворює на {@link Repair}, хибні пропускає з поясненням.
+     * Обробляє всі рядки: коректні перетворює на {@link RepairOrder}, хибні пропускає з поясненням.
      *
      * @param lines рядки вхідного файла
      * @return підсумкові показники та перелік помилок
      */
     public static RepairSummary analyze(List<String> lines) {
-        List<Repair> repairs = new ArrayList<>();
+        List<RepairOrder> repairs = new ArrayList<>();
         List<String> errors = new ArrayList<>();
         for (int index = 0; index < lines.size(); index++) {
             try {
                 // До списку потрапляє лише об'єкт, що пройшов усі перевірки конструктора.
-                repairs.add(Repair.fromCsv(lines.get(index)));
+                repairs.add(RepairOrder.fromCsv(lines.get(index)));
             } catch (IllegalArgumentException e) {
                 // Помилка одного рядка не зупиняє обробку файла.
                 errors.add(String.format("Рядок %d: %s", index + 1, e.getMessage()));
@@ -44,11 +44,11 @@ public final class RepairAnalyzer {
      * @param errors  повідомлення про пропущені рядки
      * @return кількість, сумарний час, загальний виторг і найдовший ремонт
      */
-    public static RepairSummary summarize(List<Repair> repairs, List<String> errors) {
+    public static RepairSummary summarize(List<RepairOrder> repairs, List<String> errors) {
         double totalHours = 0.0;
         double totalRevenue = 0.0;
-        Repair longest = null;
-        for (Repair repair : repairs) {
+        RepairOrder longest = null;
+        for (RepairOrder repair : repairs) {
             totalHours += repair.hours();
             totalRevenue += repair.price();
             // Строга нерівність: при однаковій тривалості лишається перший запис.
