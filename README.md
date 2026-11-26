@@ -1,4 +1,4 @@
-# Ремонтна майстерня — лабораторні роботи № 1–5 (КЗП, варіант 16)
+# Ремонтна майстерня — лабораторні роботи № 1–2 (КЗП, варіант 16)
 
 Автор: Нестер А.В., група КІ-303.
 
@@ -38,15 +38,15 @@ client;device;diagnosis;hours;price
 ```text
 mvnw.cmd clean verify          # Windows
 ./mvnw clean verify            # macOS / Ubuntu
-java -jar target/lab01-5.0.0.jar --input data/input.csv --output out/report.txt
-java -jar target/lab01-5.0.0.jar --help
-java -jar target/lab01-5.0.0.jar --version
+java -jar target/lab01-2.0.0.jar --input data/input.csv --output out/report.txt
+java -jar target/lab01-2.0.0.jar --help
+java -jar target/lab01-2.0.0.jar --version
 ```
 
 ## Приклад
 
 ```text
-> java -jar target/lab01-5.0.0.jar
+> java -jar target/lab01-2.0.0.jar
 === Звіт ремонтної майстерні ===
 Показник                             Значення
 Кількість коректних записів                 6
@@ -74,109 +74,36 @@ java -jar target/lab01-5.0.0.jar --version
 src/main/java/ua/lpnu/kzp/
 ├── Main.java            CLI-аргументи та оркестрація
 ├── FileReport.java      читання/запис файлів у UTF-8 через Path
-├── Repair.java          клас-сутність: private final поля, інваріанти, fromCsv, Builder
-├── WorkCost.java        record (hours, price): єдине місце числових правил
-├── RepairAnalyzer.java  List<String> → List<Repair> + помилки → показники
+├── RepairOrder.java     клас-сутність: private final поля, інваріанти, fromCsv, Builder
+├── HoursPrice.java      record (hours, price): єдине місце числових правил
+├── RepairAnalyzer.java  List<String> → List<RepairOrder> + помилки → показники
 ├── RepairSummary.java   record з показниками звіту
 └── ReportFormatter.java форматування звіту (Locale.ROOT, %n)
 baseline/                контрольні вхід і звіт лабораторної роботи № 1
 docs/REPORT-lab01.md     звіт лабораторної роботи № 1
 ```
 
-### Клас `Repair`
+### Клас `RepairOrder`
+
+Назви класу-сутності й record узято з таблиці варіантів ЛР2 (варіант 16: `RepairOrder`, `HoursPrice`).
+
 
 - Поля `client`, `device`, `diagnosis`, `hours`, `price` — `private final`, сеттерів немає.
 - Конструктор перевіряє інваріанти: текстові поля не `null` і не порожні (обрізаються),
-  `hours` скінченне і `> 0`, `price` скінченна і `>= 0` (через record `WorkCost`).
-- `Repair.fromCsv(line)` — розбір одного рядка; порядок перевірок і тексти помилок
+  `hours` скінченне і `> 0`, `price` скінченна і `>= 0` (через record `HoursPrice`).
+- `RepairOrder.fromCsv(line)` — розбір одного рядка; порядок перевірок і тексти помилок
   збігаються з лабораторною роботою № 1.
-- `Repair.builder()...build()` — будівник, який викликає той самий конструктор.
+- `RepairOrder.builder()...build()` — будівник, який викликає той самий конструктор.
 - `toString()` форматує числа з двома знаками через `Locale.ROOT`.
 
 ### Відмінності від лабораторної роботи № 1
 
 | Було (1.0.0) | Стало (2.0.0) |
 |--------------|---------------|
-| запис — `String[]` з індексами 0–4 | об'єкт `Repair` з іменованими методами |
-| перевірка в `RepairAnalyzer.parseLine` | перевірка в конструкторі `Repair` і record `WorkCost` |
-| показники рахуються в циклі розбору | `analyze` збирає `List<Repair>`, `summarize` рахує показники |
+| запис — `String[]` з індексами 0–4 | об'єкт `RepairOrder` з іменованими методами |
+| перевірка в `RepairAnalyzer.parseLine` | перевірка в конструкторі `RepairOrder` і record `HoursPrice` |
+| показники рахуються в циклі розбору | `analyze` збирає `List<RepairOrder>`, `summarize` рахує показники |
 | 14 тестів | 38 тестів (старі 14 + 24 нові), тест сумісності з baseline |
 
 Формат CSV, показники й текст звіту не змінилися — це перевіряє
 `BaselineCompatibilityTest` та `Compare-Object` з `baseline/report-lab01.txt`.
-
-## Ієрархія ремонтів (версія 3.0.0, лабораторна робота № 3)
-
-```text
-Repair (abstract sealed)          спільні поля, інваріанти, equals/hashCode, fromCsv, create
-├── GadgetRepair (final)          ремонт у майстерні: totalCost = price; гарантія warrantyDays (30)
-└── ApplianceRepair (final)       побутова техніка з виїздом: totalCost = price + callOutFee (200); гарантія 90
-DeviceKind (enum)                 тип пристрою за назвою: label(), isAppliance(), fromDevice(); OTHER для невідомих
-PolymorphicReport                 консольний блок: кількість за рівнями, унікальні записи (HashSet), вартість за правилами
-RepairDescriber                   вичерпний switch зі зіставленням зі зразком (sealed, без default)
-```
-
-- Підтип обирає лише фабрика `Repair.create` (за `DeviceKind.isAppliance()`); `fromCsv` і `Builder` викликають її.
-- Рівність: однаковий клас (`getClass()`) і однакові поля; підтипи порівнюють власне поле.
-- Обрано абстрактний клас і спадкування: підтипи мають спільний стан і валідацію та відрізняються лише правилами вартості й гарантії.
-- Файл звіту не змінився (`BaselineCompatibilityTest`, `MainPolymorphismTest`); поліморфний блок друкується лише в консоль.
-
-```text
-java -jar target/lab01-5.0.0.jar --input data/input-lab03.csv --output out/report-lab03.txt
-```
-
-## Запити Stream API (версія 4.0.0, лабораторна робота № 4)
-
-| № | Метод `RepairQueries` | Операції | Результат |
-|---|------------------------|----------|-----------|
-| 1 | `expensive(repairs, minPrice)` | filter → toList | `List<Repair>` |
-| 2 | `clientNames(repairs)` | map → distinct → sorted(український Collator) → toList | `List<String>` |
-| 3 | `countByDeviceKind(repairs)` | groupingBy(kind, EnumMap, counting) | `Map<DeviceKind, Long>` |
-| 4 | `hoursStatistics(repairs)` | summarizingDouble(hours) | `DoubleSummaryStatistics` |
-| 5 | `mostExpensive(repairs, n)` | sorted(ціна ↓, клієнт ↑) → limit | `List<Repair>` |
-| — | `findByClient(repairs, name)` | filter → findFirst | `Optional<Repair>` |
-| ★ | `countByTierAndKind(repairs)` | groupingBy(tierLabel, TreeMap, groupingBy(kind, EnumMap, counting)) | вкладена карта |
-
-Цикли підсумку (`RepairAnalyzer.summarize`) і поліморфного блоку замінено на `mapToDouble().sum()`, `max()`,
-`groupingBy()` і `distinct().count()`. Цикл читання рядків лишився: він має побічний ефект (повідомлення з номером рядка).
-
-```text
-java -jar target/lab01-4.0.0.jar --input data/input-lab04.csv --min-price 1000 --top 3 --find-client "Коваль Оксана"
-```
-
-## Сховище, анотації та CSV-експорт (версія 5.0.0, лабораторна робота № 5)
-
-Пакет `ua.lpnu.kzp.storage` не містить жодної назви предметної області:
-
-| Клас | Призначення |
-|------|-------------|
-| `Repository<T>` | `add`, `addAll`, `all()` (незмінний знімок), `find(Predicate<? super T>)`, `size()` |
-| `@CsvColumn` | `@Retention(RUNTIME)`, `@Target(FIELD)`, `String value()` — назва стовпця |
-| `AnnotatedFields` | пошук анотованих полів рефлексією (з предками), сортування за іменем, `trySetAccessible`, кеш |
-| `CsvExporter` | заголовок + рядки, екранування `,` `"` і перенесень рядка, запис через `Files` у UTF-8 |
-| `JsonExporter` ★ | другий формат через спільний інтерфейс `Exporter<T>` |
-| `CsvParser` | машина станів: кома й перенесення рядка в лапках — дані; `\n`, `\r\n`, `\r` |
-| `DataStorageException` | checked-виняток із причиною (`getCause()`) |
-
-Предметна частина: `RepairRecord` (квитанція, клієнт, пристрій, тип, дата прийому, години, вартість;
-ключ — `ticket` або `ticket + acceptedOn`), `RepairCsvReader.read(Path)`, `ExportReport`.
-
-Формат експорту (стовпці в порядку Java-імен полів):
-
-```text
-прийнято,клієнт,пристрій,години,тип,вартість,квитанція
-2026-01-02,"О'Коннор, ""Шон"" мол.",Смартфон Samsung,2.0,PHONE,3200.0,2
-```
-
-| Рівень | Ситуація | Реакція | `getCause()` |
-|--------|----------|---------|--------------|
-| Модель | квитанція ≤ 0, порожній клієнт, години ≤ 0, ціна < 0 | `IllegalArgumentException` | — |
-| Формат | не 7 полів, незакриті лапки, інший заголовок | `DataStorageException` | — |
-| Значення | хибне число / дата / тип | `DataStorageException` | `NumberFormatException` / `DateTimeParseException` / `IllegalArgumentException` |
-| Файл | файла немає, шлях — каталог | `DataStorageException` | `IOException` |
-| Рефлексія | немає полів із `@CsvColumn` | `DataStorageException` | — |
-
-```text
-java -jar target/lab01-5.0.0.jar --input data/input-lab05.csv --export out/repairs.csv --export-json out/repairs.json
-java -cp target/lab01-5.0.0.jar ua.lpnu.kzp.ExportTiming     # ★ час пошуку полів без кешу і з кешем
-```

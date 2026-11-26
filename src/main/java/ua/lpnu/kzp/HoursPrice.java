@@ -3,7 +3,8 @@ package ua.lpnu.kzp;
 import java.util.Locale;
 
 /**
- * Незмінна пара «тривалість ремонту — вартість», яка перевіряє числові правила варіанта 16.
+ * Допоміжний record варіанта 16 ({@code HoursPrice}): незмінна пара «години — ціна»,
+ * яка перевіряє числові правила.
  *
  * <p>Це єдине місце, де описано правила для полів {@code hours} і {@code price}:
  * значення мають бути скінченними, {@code hours > 0}, {@code price >= 0}
@@ -12,14 +13,14 @@ import java.util.Locale;
  * @param hours тривалість ремонту в годинах
  * @param price вартість ремонту в гривнях
  */
-public record WorkCost(double hours, double price) {
+public record HoursPrice(double hours, double price) {
 
     /**
      * Перевіряє компоненти під час створення record.
      *
      * @throws IllegalArgumentException якщо значення нескінченне, NaN або поза допустимим діапазоном
      */
-    public WorkCost {
+    public HoursPrice {
         // Double.parseDouble приймає "NaN" та "Infinity", а порівняння з NaN завжди хибне,
         // тому скінченність перевіряється до перевірки діапазону.
         requireFinite(hours, "hours");
