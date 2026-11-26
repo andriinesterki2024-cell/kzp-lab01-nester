@@ -1,7 +1,6 @@
 package ua.lpnu.kzp;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -24,17 +23,6 @@ public final class RepairAnalyzer {
      * @return підсумкові показники та перелік помилок
      */
     public static RepairSummary analyze(List<String> lines) {
-        ParsedRepairs parsed = parse(lines);
-        return summarize(parsed.repairs(), parsed.errors());
-    }
-
-    /**
-     * Перетворює рядки на записи; хибні рядки потрапляють до списку помилок із номером.
-     *
-     * @param lines рядки вхідного файла
-     * @return коректні записи різних підтипів і повідомлення про пропущені рядки
-     */
-    public static ParsedRepairs parse(List<String> lines) {
         List<Repair> repairs = new ArrayList<>();
         List<String> errors = new ArrayList<>();
         for (int index = 0; index < lines.size(); index++) {
@@ -46,7 +34,7 @@ public final class RepairAnalyzer {
                 errors.add(String.format("Рядок %d: %s", index + 1, e.getMessage()));
             }
         }
-        return new ParsedRepairs(repairs, errors);
+        return summarize(repairs, errors);
     }
 
     /**
@@ -57,13 +45,17 @@ public final class RepairAnalyzer {
      * @return кількість, сумарний час, загальний виторг і найдовший ремонт
      */
     public static RepairSummary summarize(List<Repair> repairs, List<String> errors) {
-        double totalHours = repairs.stream().mapToDouble(Repair::hours).sum();
-        double totalRevenue = repairs.stream().mapToDouble(Repair::price).sum();
-        // Stream.max зберігає перший із рівних елементів (BinaryOperator.maxBy),
-        // тому за однакової тривалості, як і в циклі ЛР1, лишається перший запис.
-        Repair longest = repairs.stream()
-                .max(Comparator.comparingDouble(Repair::hours))
-                .orElse(null);
+        double totalHours = 0.0;
+        double totalRevenue = 0.0;
+        Repair longest = null;
+        for (Repair repair : repairs) {
+            totalHours += repair.hours();
+            totalRevenue += repair.price();
+            // Строга нерівність: при однаковій тривалості лишається перший запис.
+            if (longest == null || repair.hours() > longest.hours()) {
+                longest = repair;
+            }
+        }
         return new RepairSummary(repairs.size(), totalHours, totalRevenue,
                 longest == null ? 0.0 : longest.hours(),
                 longest == null ? "" : longest.client(),
