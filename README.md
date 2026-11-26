@@ -1,4 +1,4 @@
-# Ремонтна майстерня — лабораторні роботи № 1–4 (КЗП, варіант 16)
+# Ремонтна майстерня — лабораторні роботи № 1–5 (КЗП, варіант 16)
 
 Автор: Нестер А.В., група КІ-303.
 
@@ -38,15 +38,15 @@ client;device;diagnosis;hours;price
 ```text
 mvnw.cmd clean verify          # Windows
 ./mvnw clean verify            # macOS / Ubuntu
-java -jar target/lab01-4.0.0.jar --input data/input.csv --output out/report.txt
-java -jar target/lab01-4.0.0.jar --help
-java -jar target/lab01-4.0.0.jar --version
+java -jar target/lab01-5.0.0.jar --input data/input.csv --output out/report.txt
+java -jar target/lab01-5.0.0.jar --help
+java -jar target/lab01-5.0.0.jar --version
 ```
 
 ## Приклад
 
 ```text
-> java -jar target/lab01-4.0.0.jar
+> java -jar target/lab01-5.0.0.jar
 === Звіт ремонтної майстерні ===
 Показник                             Значення
 Кількість коректних записів                 6
@@ -126,7 +126,7 @@ enum `RepairKind`, поліморфна операція — остаточна 
 - Поліморфний блок (`PolymorphicReport`) друкується лише в консоль; ★ `RepairDescriber` — вичерпний `switch` за sealed-ієрархією.
 
 ```text
-java -jar target/lab01-4.0.0.jar --input data/input-lab03.csv --output out/report-lab03.txt
+java -jar target/lab01-5.0.0.jar --input data/input-lab03.csv --output out/report-lab03.txt
 ```
 
 ## Запити Stream API (версія 4.0.0, лабораторна робота № 4)
@@ -147,5 +147,30 @@ java -jar target/lab01-4.0.0.jar --input data/input-lab03.csv --output out/repor
 | ★ | `countByKindAndStatus` | groupingBy(kind, groupingBy(status, counting())) | вкладена карта |
 
 ```text
-java -jar target/lab01-4.0.0.jar --input data/input-lab04.csv --top 5 --find-client "Коваль Оксана"
+java -jar target/lab01-5.0.0.jar --input data/input-lab04.csv --top 5 --find-client "Коваль Оксана"
+```
+
+## Сховище, анотації та CSV-експорт (версія 5.0.0, лабораторна робота № 5)
+
+За таблицею варіантів ЛР5 (варіант 16): `RepairOrderRecord` — customer, device, fault, date, cost, kind;
+CSV-стовпці «клієнт, пристрій, несправність, дата, вартість, вид»; ключ round-trip — customer + date.
+
+| Клас | Призначення |
+|------|-------------|
+| `Repository<T>` | `add`, `addAll`, `all()` (незмінний знімок), `find(Predicate<? super T>)`, `size()` |
+| `@CsvColumn` | `@Retention(RUNTIME)`, `@Target(FIELD)`, `String value()` |
+| `AnnotatedFields` | рефлексія: поля з анотацією (з предками), сортування за іменем, `trySetAccessible`, кеш |
+| `CsvExporter` / `JsonExporter` ★ | універсальний експорт через `Exporter<T>`, UTF-8, екранування |
+| `CsvParser` | машина станів: кома й перенесення в лапках — дані |
+| `DataStorageException` | checked-виняток із причиною |
+| `RepairOrderRecord`, `RepairOrderCsvReader` | запис варіанта й читання CSV назад |
+
+```text
+вартість,клієнт,дата,пристрій,несправність,вид
+3200.0,"О'Коннор, ""Шон"" мол.",2026-01-08,Смартфон Samsung,Заміна екрана,PAID
+```
+
+```text
+java -jar target/lab01-5.0.0.jar --input data/input-lab05.csv --export out/orders.csv --export-json out/orders.json
+java -cp target/lab01-5.0.0.jar ua.lpnu.kzp.ExportTiming
 ```
