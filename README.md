@@ -1,4 +1,4 @@
-# Ремонтна майстерня — лабораторні роботи № 1–2 (КЗП, варіант 16)
+# Ремонтна майстерня — лабораторні роботи № 1–3 (КЗП, варіант 16)
 
 Автор: Нестер А.В., група КІ-303.
 
@@ -38,15 +38,15 @@ client;device;diagnosis;hours;price
 ```text
 mvnw.cmd clean verify          # Windows
 ./mvnw clean verify            # macOS / Ubuntu
-java -jar target/lab01-2.0.0.jar --input data/input.csv --output out/report.txt
-java -jar target/lab01-2.0.0.jar --help
-java -jar target/lab01-2.0.0.jar --version
+java -jar target/lab01-3.0.0.jar --input data/input.csv --output out/report.txt
+java -jar target/lab01-3.0.0.jar --help
+java -jar target/lab01-3.0.0.jar --version
 ```
 
 ## Приклад
 
 ```text
-> java -jar target/lab01-2.0.0.jar
+> java -jar target/lab01-3.0.0.jar
 === Звіт ремонтної майстерні ===
 Показник                             Значення
 Кількість коректних записів                 6
@@ -107,3 +107,24 @@ docs/REPORT-lab01.md     звіт лабораторної роботи № 1
 
 Формат CSV, показники й текст звіту не змінилися — це перевіряє
 `BaselineCompatibilityTest` та `Compare-Object` з `baseline/report-lab01.txt`.
+
+## Ієрархія заявок (версія 3.0.0, лабораторна робота № 3)
+
+За таблицею варіантів ЛР3 (варіант 16): базовий тип `RepairOrder`, підтипи `WarrantyRepair` і `PaidRepair`,
+enum `RepairKind`, поліморфна операція — остаточна вартість `finalCost()`.
+
+| Тип | Власне поле | Остаточна вартість |
+|-----|-------------|--------------------|
+| `WarrantyRepair` | `warrantyMonths` (1…36, типово 12) | 0.00 — роботи покриває гарантія |
+| `PaidRepair` | `discountRate` (0…0.5, типово 0.05) | `price`; від 3000 грн — зі знижкою |
+
+- `RepairOrder` — `abstract sealed`, спільні поля й інваріанти; підтип обирає лише фабрика `create(..., kind)`.
+- Формат CSV: `client;device;diagnosis;hours;price[;kind]`, `kind` — `WARRANTY` або `PAID`
+  (рядок формату ЛР1 без виду стає платною заявкою, тому звіт ЛР1 не змінився).
+- Рівність: `getClass()` + спільні поля + власне поле; перевірено в `HashSet` і `HashMap`.
+- Обрано спадкування (гарантійний ремонт *є* заявкою) і композицію для `HoursPrice` (заявка *має* години й ціну).
+- Поліморфний блок (`PolymorphicReport`) друкується лише в консоль; ★ `RepairDescriber` — вичерпний `switch` за sealed-ієрархією.
+
+```text
+java -jar target/lab01-3.0.0.jar --input data/input-lab03.csv --output out/report-lab03.txt
+```
